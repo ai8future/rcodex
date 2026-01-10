@@ -49,7 +49,7 @@ func (t *Tool) ValidModels() []string {
 
 // DefaultModel returns the default model name
 func (t *Tool) DefaultModel() string {
-	return "gemini-2.5-pro"
+	return "gemini-3"
 }
 
 // DefaultModelSetting returns the default model from settings

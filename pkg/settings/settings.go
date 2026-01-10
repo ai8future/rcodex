@@ -117,7 +117,7 @@ func GetDefaultSettings() *Settings {
 				Budget: "10.00",
 			},
 			Gemini: GeminiDefaults{
-				Model: "gemini-2.5-pro",
+				Model: "gemini-3",
 			},
 		},
 		Tasks: make(map[string]TaskDef),
@@ -145,7 +145,7 @@ func LoadWithFallback() (*Settings, bool) {
 		settings.Defaults.Claude.Budget = "10.00"
 	}
 	if settings.Defaults.Gemini.Model == "" {
-		settings.Defaults.Gemini.Model = "gemini-2.5-pro"
+		settings.Defaults.Gemini.Model = "gemini-3"
 	}
 	return settings, true
 }
