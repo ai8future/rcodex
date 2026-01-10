@@ -1,0 +1,24 @@
+{
+  "name": "red-team",
+  "description": "One writes code, another attacks it",
+  "inputs": [
+    {"name": "task", "required": true}
+  ],
+  "steps": [
+    {
+      "name": "implementation",
+      "tool": "claude",
+      "task": "${inputs.task}"
+    },
+    {
+      "name": "attack",
+      "tool": "gemini",
+      "task": "You are a security researcher. Find vulnerabilities and write exploits.\n\n${steps.implementation.result}"
+    },
+    {
+      "name": "hardened",
+      "tool": "claude",
+      "task": "Security researcher found these issues:\n\n${steps.attack.result}\n\nFix all vulnerabilities."
+    }
+  ]
+}

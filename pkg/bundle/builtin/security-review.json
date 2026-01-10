@@ -1,0 +1,19 @@
+{
+  "name": "security-review",
+  "description": "Multi-model security audit with synthesis",
+  "inputs": [],
+  "steps": [
+    {
+      "name": "audits",
+      "parallel": [
+        {"name": "claude-audit", "tool": "claude", "task": "Audit for security vulnerabilities. Be thorough."},
+        {"name": "gemini-audit", "tool": "gemini", "task": "Audit for security vulnerabilities. Be thorough."}
+      ]
+    },
+    {
+      "name": "synthesis",
+      "tool": "claude",
+      "task": "Synthesize these security audits into a prioritized report:\n\nAudit 1:\n${steps.claude-audit.result}\n\nAudit 2:\n${steps.gemini-audit.result}"
+    }
+  ]
+}

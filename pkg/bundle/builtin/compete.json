@@ -1,0 +1,31 @@
+{
+  "name": "compete",
+  "description": "Two models implement, then grade each other",
+  "inputs": [
+    {"name": "task", "required": true, "description": "The task to implement"}
+  ],
+  "steps": [
+    {
+      "name": "implementations",
+      "parallel": [
+        {"name": "claude-impl", "tool": "claude", "task": "${inputs.task}"},
+        {"name": "gemini-impl", "tool": "gemini", "task": "${inputs.task}"}
+      ]
+    },
+    {
+      "name": "grading",
+      "parallel": [
+        {
+          "name": "gemini-grades-claude",
+          "tool": "gemini",
+          "task": "Grade this implementation 0-100. List specific issues.\n\n${steps.claude-impl.result}"
+        },
+        {
+          "name": "claude-grades-gemini",
+          "tool": "claude",
+          "task": "Grade this implementation 0-100. List specific issues.\n\n${steps.gemini-impl.result}"
+        }
+      ]
+    }
+  ]
+}

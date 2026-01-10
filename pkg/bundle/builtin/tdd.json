@@ -1,0 +1,24 @@
+{
+  "name": "tdd",
+  "description": "Test-driven: write tests first, then implement",
+  "inputs": [
+    {"name": "task", "required": true}
+  ],
+  "steps": [
+    {
+      "name": "tests",
+      "tool": "claude",
+      "task": "Write comprehensive failing tests. Do NOT implement.\n\n${inputs.task}"
+    },
+    {
+      "name": "implementation",
+      "tool": "gemini",
+      "task": "Implement minimal code to pass these tests:\n\n${steps.tests.result}"
+    },
+    {
+      "name": "review",
+      "tool": "claude",
+      "task": "Review:\n\nTests:\n${steps.tests.result}\n\nImplementation:\n${steps.implementation.result}\n\nDo tests pass? Is code clean?"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "ensemble",
+  "description": "Three models propose, then vote",
+  "inputs": [
+    {"name": "task", "required": true}
+  ],
+  "steps": [
+    {
+      "name": "proposals",
+      "parallel": [
+        {"name": "claude-proposal", "tool": "claude", "task": "Propose approach for: ${inputs.task}"},
+        {"name": "gemini-proposal", "tool": "gemini", "task": "Propose approach for: ${inputs.task}"},
+        {"name": "codex-proposal", "tool": "codex", "task": "Propose approach for: ${inputs.task}"}
+      ]
+    },
+    {
+      "name": "decision",
+      "vote": {
+        "inputs": ["claude-proposal", "gemini-proposal", "codex-proposal"],
+        "strategy": "majority"
+      }
+    }
+  ]
+}
