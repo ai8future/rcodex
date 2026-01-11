@@ -479,7 +479,7 @@ func RunInteractiveSetup() (*Settings, bool) {
 		return nil, false
 	}
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0600); err != nil {
 		fmt.Fprintf(os.Stderr, "%sError writing settings: %v%s\n", yellow, err, reset)
 		return nil, false
 	}

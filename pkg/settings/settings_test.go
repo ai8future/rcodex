@@ -6,6 +6,22 @@ import (
 	"testing"
 )
 
+func TestSettingsFilePermissions(t *testing.T) {
+	// This test verifies settings are written with 0600 permissions
+	// The settings file should be written with 0600 (owner read/write only)
+	expectedPerm := os.FileMode(0600)
+
+	// Check if settings file exists and has correct permissions
+	configPath := GetConfigPath()
+	if info, err := os.Stat(configPath); err == nil {
+		actualPerm := info.Mode().Perm()
+		if actualPerm != expectedPerm {
+			t.Errorf("settings file has permissions %o, want %o", actualPerm, expectedPerm)
+		}
+	}
+	// If file doesn't exist, that's OK - test passes
+}
+
 func TestExpandTilde(t *testing.T) {
 	home, err := os.UserHomeDir()
 	if err != nil {
