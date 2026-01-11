@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-01-11
+
+### Security
+- Move lock files to ~/.rcodegen/locks/ (prevents symlink attacks)
+- Add bundle name validation (blocks path traversal)
+- Secure settings file permissions (0600)
+- Make debug files opt-in via RCLAUDE_DEBUG/RCODEX_DEBUG env vars
+- Add settings integrity check (warns if world-writable)
+
+### Added
+- GitHub Actions CI/CD workflow (build, test, lint, security scan)
+- Package documentation for all packages
+- Thread-safe Claude status caching with sync.Once
+
+### Changed
+- Replace O(n^2) bubble sort with sort.Slice in reports
+- Extract magic numbers to named constants
+- Standardize error message format
+- Fix global variable mutation in task config
+- Refactor parseArgs (189 -> 119 lines) with helper functions
+- Add scanner error checking in report reviews
+- Check JSON marshal errors in stats output
+- Improve error messages with file paths
+
+### Fixed
+- JSON marshal error handling in stats output
+- Scanner.Err() check in IsReportReviewed
+
+## [1.3.15] - 2026-01-11
+
+### Changed
+- Edited and finalized the productivity article in Seth Levine's style, saved as `docs/article-2026-01-11-11-29-04/The Productivity Myth - Codex.md`
+
 ## [1.3.14] - 2026-01-11
 
 ### Changed
