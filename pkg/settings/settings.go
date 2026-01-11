@@ -1,3 +1,5 @@
+// Package settings handles loading and managing user configuration
+// from ~/.rcodegen/settings.json, including interactive setup.
 package settings
 
 import (

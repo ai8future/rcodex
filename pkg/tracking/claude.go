@@ -1,3 +1,5 @@
+// Package tracking provides credit usage tracking for Claude Max and Codex
+// subscriptions via iTerm2 API integration.
 package tracking
 
 import (

@@ -1,3 +1,5 @@
+// Package reports provides utilities for managing report files,
+// including detecting unreviewed reports and cleaning up old ones.
 package reports
 
 import (

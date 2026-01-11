@@ -1,3 +1,5 @@
+// Package workspace manages temporary working directories for isolated
+// code generation tasks, with automatic cleanup on completion.
 package workspace
 
 import (

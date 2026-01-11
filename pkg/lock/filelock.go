@@ -1,3 +1,5 @@
+// Package lock provides file-based locking to prevent concurrent runs
+// of rcodegen tools on the same codebase.
 package lock
 
 import (

@@ -1,3 +1,5 @@
+// Package bundle provides loading and management of task bundles,
+// which are JSON-defined workflows with steps, prompts, and variables.
 package bundle
 
 import (

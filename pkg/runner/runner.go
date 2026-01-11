@@ -1,3 +1,5 @@
+// Package runner provides the core execution framework for rcodegen tools.
+// It handles argument parsing, task execution, and output formatting.
 package runner
 
 import (
@@ -472,10 +474,101 @@ func (r *Runner) printDetailedSummary(cfg *Config, workDir string, startTime tim
 	fmt.Printf("%s%s══════════════════════════════════════════%s\n", Bold, Cyan, Reset)
 }
 
-// parseArgs parses command line arguments
-// Returns (*Config, nil) on success
-// Returns (nil, nil) when help or tasks were shown (exit 0)
-// Returns (nil, error) on error (exit 1)
+// setWorkingDirectories configures the working directories based on -c or -d flags.
+func (r *Runner) setWorkingDirectories(cfg *Config, codePath, dirPath string) {
+	if codePath != "" {
+		if !r.SettingsOK {
+			settings.PrintSetupInstructions(r.Tool.Name())
+			fmt.Fprintf(os.Stderr, "  %sUsing fallback:%s %s~/Desktop/_code%s\n\n", Dim, Reset, Magenta, Reset)
+		}
+		// Split on comma for multiple codebases
+		for _, p := range strings.Split(codePath, ",") {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				cfg.WorkDirs = append(cfg.WorkDirs, filepath.Join(r.Settings.GetCodeDir(), p))
+				if cfg.Codebase == "" {
+					cfg.Codebase = p
+				}
+			}
+		}
+	} else if dirPath != "" {
+		// Split on comma for multiple directories
+		for _, p := range strings.Split(dirPath, ",") {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				cfg.WorkDirs = append(cfg.WorkDirs, p)
+				if cfg.Codebase == "" {
+					cfg.Codebase = filepath.Base(p)
+				}
+			}
+		}
+	} else {
+		// No directory specified - use current directory's basename
+		if cwd, err := os.Getwd(); err == nil {
+			cfg.Codebase = filepath.Base(cwd)
+		}
+	}
+}
+
+// expandTaskShortcut expands a task shortcut to its full prompt if it exists.
+func (r *Runner) expandTaskShortcut(cfg *Config) {
+	if cfg.Task == "" || cfg.Task == "suite" {
+		if cfg.Task == "suite" {
+			cfg.TaskShortcut = cfg.Task
+		}
+		return
+	}
+	if r.TaskConfig != nil {
+		if expanded, ok := r.TaskConfig.Tasks[cfg.Task]; ok {
+			cfg.TaskShortcut = cfg.Task
+			cfg.Task = expanded
+		}
+	}
+}
+
+// applyVariableSubstitution replaces {var} placeholders with -x flag values.
+func applyVariableSubstitution(cfg *Config) {
+	if cfg.Task == "" || len(cfg.Vars) == 0 {
+		return
+	}
+	for key, value := range cfg.Vars {
+		placeholder := "{" + key + "}"
+		cfg.Task = strings.ReplaceAll(cfg.Task, placeholder, value)
+	}
+}
+
+// validatePlaceholders checks for unsubstituted placeholders and returns an error if found.
+func validatePlaceholders(task string) error {
+	if task == "" || task == "suite" {
+		return nil
+	}
+	re := regexp.MustCompile(`\{([a-zA-Z_][a-zA-Z0-9_]*)\}`)
+	systemPlaceholders := map[string]bool{
+		"report_dir":  true,
+		"report_file": true,
+		"codebase":    true,
+	}
+	matches := re.FindAllStringSubmatch(task, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+	var missing []string
+	for _, m := range matches {
+		if !systemPlaceholders[m[1]] {
+			missing = append(missing, m[1])
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("missing variables: %s\nUse -x name=value to provide them",
+			strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+// parseArgs parses command line arguments.
+// Returns (*Config, nil) on success.
+// Returns (nil, nil) when help or tasks were shown (exit 0).
+// Returns (nil, error) on error (exit 1).
 func (r *Runner) parseArgs() (*Config, error) {
 	cfg := NewConfig()
 
@@ -566,42 +659,7 @@ func (r *Runner) parseArgs() (*Config, error) {
 	}
 
 	// Set working directories (supports comma-separated list)
-	if codePath != "" {
-		if !r.SettingsOK {
-			settings.PrintSetupInstructions(r.Tool.Name())
-			fmt.Fprintf(os.Stderr, "  %sUsing fallback:%s %s~/Desktop/_code%s\n\n", Dim, Reset, Magenta, Reset)
-		}
-		// Split on comma for multiple codebases
-		paths := strings.Split(codePath, ",")
-		for _, p := range paths {
-			p = strings.TrimSpace(p)
-			if p != "" {
-				cfg.WorkDirs = append(cfg.WorkDirs, filepath.Join(r.Settings.GetCodeDir(), p))
-				// Use first codebase name for report filenames
-				if cfg.Codebase == "" {
-					cfg.Codebase = p
-				}
-			}
-		}
-	} else if dirPath != "" {
-		// Split on comma for multiple directories
-		paths := strings.Split(dirPath, ",")
-		for _, p := range paths {
-			p = strings.TrimSpace(p)
-			if p != "" {
-				cfg.WorkDirs = append(cfg.WorkDirs, p)
-				// Use first directory basename as codebase name for report filenames
-				if cfg.Codebase == "" {
-					cfg.Codebase = filepath.Base(p)
-				}
-			}
-		}
-	} else {
-		// No directory specified - use current directory's basename as codebase name
-		if cwd, err := os.Getwd(); err == nil {
-			cfg.Codebase = filepath.Base(cwd)
-		}
-	}
+	r.setWorkingDirectories(cfg, codePath, dirPath)
 
 	// Apply settings default for output directory if not specified via CLI
 	if cfg.OutputDir == "" && r.Settings.OutputDir != "" {
@@ -617,47 +675,13 @@ func (r *Runner) parseArgs() (*Config, error) {
 	// Build original command string for summary
 	cfg.OriginalCmd = strings.Join(os.Args[1:], " ")
 
-	// Expand task shortcut if it matches
-	if cfg.Task != "" && cfg.Task != "suite" {
-		if r.TaskConfig != nil {
-			if expanded, ok := r.TaskConfig.Tasks[cfg.Task]; ok {
-				cfg.TaskShortcut = cfg.Task
-				cfg.Task = expanded
-			}
-		}
-	} else if cfg.Task == "suite" {
-		cfg.TaskShortcut = cfg.Task
-	}
+	// Expand task shortcut and apply variable substitution
+	r.expandTaskShortcut(cfg)
+	applyVariableSubstitution(cfg)
 
-	// Apply variable substitution to task
-	if cfg.Task != "" && len(cfg.Vars) > 0 {
-		for key, value := range cfg.Vars {
-			placeholder := "{" + key + "}"
-			cfg.Task = strings.ReplaceAll(cfg.Task, placeholder, value)
-		}
-	}
-
-	// Validate no unsubstituted placeholders remain (skip for "suite" meta-task)
-	// System placeholders (report_dir, report_file, codebase) are substituted later
-	if cfg.Task != "" && cfg.Task != "suite" {
-		re := regexp.MustCompile(`\{([a-zA-Z_][a-zA-Z0-9_]*)\}`)
-		systemPlaceholders := map[string]bool{
-			"report_dir":  true,
-			"report_file": true,
-			"codebase":    true,
-		}
-		if matches := re.FindAllStringSubmatch(cfg.Task, -1); len(matches) > 0 {
-			var missing []string
-			for _, m := range matches {
-				if !systemPlaceholders[m[1]] {
-					missing = append(missing, m[1])
-				}
-			}
-			if len(missing) > 0 {
-				return nil, fmt.Errorf("missing variables: %s\nUse -x name=value to provide them",
-					strings.Join(missing, ", "))
-			}
-		}
+	// Validate no unsubstituted placeholders remain
+	if err := validatePlaceholders(cfg.Task); err != nil {
+		return nil, err
 	}
 
 	return cfg, nil

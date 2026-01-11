@@ -1,3 +1,5 @@
+// Package orchestrator executes multi-step task bundles, coordinating
+// between different AI tools and managing step dependencies.
 package orchestrator
 
 import (
