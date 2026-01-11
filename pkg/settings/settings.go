@@ -104,11 +104,24 @@ func expandTilde(path string) string {
 func Load() (*Settings, error) {
 	configPath := GetConfigPath()
 
-	data, err := os.ReadFile(configPath)
+	// Check file permissions for security
+	info, err := os.Stat(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("settings file not found: %s", configPath)
 		}
+		return nil, fmt.Errorf("failed to stat settings file: %w", err)
+	}
+
+	// Warn if settings file is world-writable (security risk)
+	mode := info.Mode().Perm()
+	if mode&0002 != 0 { // world-writable
+		fmt.Fprintf(os.Stderr, "Warning: settings file %s is world-writable (mode %o). This is a security risk.\n", configPath, mode)
+		fmt.Fprintf(os.Stderr, "Run: chmod 600 %s\n", configPath)
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
 		return nil, fmt.Errorf("failed to read settings: %w", err)
 	}
 
