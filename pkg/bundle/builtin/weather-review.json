@@ -11,17 +11,17 @@
     {
       "name": "gemini-review",
       "tool": "gemini",
-      "task": "Review this code for bugs, security issues, and improvements. Be specific.\n\n${steps.build.result}"
+      "task": "Review this code for bugs, security issues, and improvements. Be specific.\n\n${steps.build.stdout}"
     },
     {
       "name": "codex-review",
       "tool": "codex",
-      "task": "Review this code for bugs, security issues, and improvements. Be specific.\n\n${steps.build.result}"
+      "task": "Review this code for bugs, security issues, and improvements. Be specific.\n\n${steps.build.stdout}"
     },
     {
       "name": "grade",
       "tool": "claude",
-      "task": "Grade the implementation 0-100 based on the reviews.\n\nOriginal Code:\n${steps.build.result}\n\nGemini Review:\n${steps.gemini-review.result}\n\nCodex Review:\n${steps.codex-review.result}\n\nProvide a final score and summary."
+      "task": "Grade the implementation 0-100 based on the reviews.\n\nOriginal Code:\n${steps.build.stdout}\n\nGemini Review:\n${steps.gemini-review.stdout}\n\nCodex Review:\n${steps.codex-review.stdout}\n\nProvide a final score and summary."
     }
   ]
 }

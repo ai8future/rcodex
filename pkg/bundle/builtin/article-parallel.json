@@ -1,0 +1,44 @@
+{
+  "name": "article-parallel",
+  "description": "Research style, draft in parallel with two models, edit both",
+  "inputs": [
+    {"name": "topic", "required": true, "description": "The topic to write about"}
+  ],
+  "steps": [
+    {
+      "name": "research",
+      "tool": "gemini",
+      "task": "Research Seth Levine and his book The New Builders. Learn his writing style.\n\nAnalyze:\n- His tone and voice\n- How he structures arguments\n- His use of narrative and storytelling\n- How he balances data with human stories\n- What makes his writing feel authentic vs corporate\n\nSave your style analysis to ${inputs.output_dir}/style-guide.md"
+    },
+    {
+      "name": "drafts",
+      "parallel": [
+        {
+          "name": "draft-codex",
+          "tool": "codex",
+          "task": "Using this Seth Levine style guide:\n\n${steps.research.stdout}\n\nWrite a 1000-word article about: ${inputs.topic}\n\nChannel Levine's voice - narrative-driven, empathetic, challenging conventional wisdom, grounded in real human experience. Open with a specific person's story, weave in data, challenge myths.\n\nThe article MUST be at least 1000 words. Take your time and develop the narrative fully.\n\nSave the draft to ${inputs.output_dir}/draft-codex.md"
+        },
+        {
+          "name": "draft-gemini",
+          "tool": "gemini",
+          "task": "Using this Seth Levine style guide:\n\n${steps.research.stdout}\n\nWrite a 1000-word article about: ${inputs.topic}\n\nChannel Levine's voice - narrative-driven, empathetic, challenging conventional wisdom, grounded in real human experience. Open with a specific person's story, weave in data, challenge myths.\n\nThe article MUST be at least 1000 words. Take your time and develop the narrative fully.\n\nSave the draft to ${inputs.output_dir}/draft-gemini.md"
+        }
+      ]
+    },
+    {
+      "name": "edits",
+      "parallel": [
+        {
+          "name": "edit-codex",
+          "tool": "gemini",
+          "task": "Edit this article:\n\n${steps.draft-codex.stdout}\n\nYour job:\n1. Verify it matches Seth Levine's authentic style from your research\n2. Remove anything that looks lingo-ish or marketing-speak\n3. Cut anything that cheapens the writing or feels corporate\n4. Ensure it reads like genuine journalism, not content marketing\n5. Maintain the 1000-word length - do not shorten significantly\n\nBe ruthless about authenticity. Keep the length.\n\nSave the final article to ${inputs.output_dir}/ using the article title as the filename with '-Codex' suffix (e.g., 'The Productivity Myth - Codex.md')"
+        },
+        {
+          "name": "edit-gemini",
+          "tool": "gemini",
+          "task": "Edit this article:\n\n${steps.draft-gemini.stdout}\n\nYour job:\n1. Verify it matches Seth Levine's authentic style from your research\n2. Remove anything that looks lingo-ish or marketing-speak\n3. Cut anything that cheapens the writing or feels corporate\n4. Ensure it reads like genuine journalism, not content marketing\n5. Maintain the 1000-word length - do not shorten significantly\n\nBe ruthless about authenticity. Keep the length.\n\nSave the final article to ${inputs.output_dir}/ using the article title as the filename with '-Gemini' suffix (e.g., 'The Productivity Myth - Gemini.md')"
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"rcodegen/pkg/bundle"
+	_ "rcodegen/pkg/executor" // Register dispatcher factory via init()
 	"rcodegen/pkg/orchestrator"
 	"rcodegen/pkg/settings"
 )

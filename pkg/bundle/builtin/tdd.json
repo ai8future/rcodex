@@ -13,12 +13,12 @@
     {
       "name": "implementation",
       "tool": "gemini",
-      "task": "Implement minimal code to pass these tests:\n\n${steps.tests.result}"
+      "task": "Implement minimal code to pass these tests:\n\n${steps.tests.stdout}"
     },
     {
       "name": "review",
       "tool": "claude",
-      "task": "Review:\n\nTests:\n${steps.tests.result}\n\nImplementation:\n${steps.implementation.result}\n\nDo tests pass? Is code clean?"
+      "task": "Review:\n\nTests:\n${steps.tests.stdout}\n\nImplementation:\n${steps.implementation.stdout}\n\nDo tests pass? Is code clean?"
     }
   ]
 }

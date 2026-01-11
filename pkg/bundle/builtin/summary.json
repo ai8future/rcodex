@@ -1,0 +1,20 @@
+{
+  "name": "summary",
+  "description": "Summarize content, then verify accuracy",
+  "inputs": [
+    {"name": "content", "required": true, "description": "The content to summarize"},
+    {"name": "length", "required": false, "default": "3 paragraphs", "description": "Target summary length"}
+  ],
+  "steps": [
+    {
+      "name": "summarize",
+      "tool": "claude",
+      "task": "Summarize this content in ${inputs.length}:\n\n${inputs.content}\n\nCapture the key points and main ideas."
+    },
+    {
+      "name": "verify",
+      "tool": "gemini",
+      "task": "Verify this summary is accurate and complete:\n\nOriginal:\n${inputs.content}\n\nSummary:\n${steps.summarize.stdout}\n\nList any:\n- Missing key points\n- Inaccuracies\n- Improvements needed\n\nThen provide the final verified summary."
+    }
+  ]
+}

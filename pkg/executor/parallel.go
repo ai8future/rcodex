@@ -36,12 +36,24 @@ func (e *ParallelExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context,
 
 	wg.Wait()
 
-	// Build aggregate result
+	// Build aggregate result with summed costs
 	allSuccess := true
+	var totalCost float64
+	var totalInput, totalOutput int
+
 	for _, env := range results {
 		if env.Status != envelope.StatusSuccess {
 			allSuccess = false
-			break
+		}
+		// Aggregate costs from substeps
+		if c, ok := env.Result["cost_usd"].(float64); ok {
+			totalCost += c
+		}
+		if t, ok := env.Result["input_tokens"].(int); ok {
+			totalInput += t
+		}
+		if t, ok := env.Result["output_tokens"].(int); ok {
+			totalOutput += t
 		}
 	}
 
@@ -53,8 +65,11 @@ func (e *ParallelExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context,
 	return &envelope.Envelope{
 		Status: status,
 		Result: map[string]interface{}{
-			"steps":     len(results),
-			"completed": len(results),
+			"steps":        len(results),
+			"completed":    len(results),
+			"cost_usd":     totalCost,
+			"input_tokens": totalInput,
+			"output_tokens": totalOutput,
 		},
 	}, firstErr
 }

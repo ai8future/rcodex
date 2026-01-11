@@ -60,10 +60,22 @@ func (t *Tool) DefaultModelSetting() string {
 
 // BuildCommand constructs the exec.Cmd for running a task
 func (t *Tool) BuildCommand(cfg *runner.Config, workDir, task string) *exec.Cmd {
-	args := []string{
-		"-p", task,
-		"--output-format", "stream-json",
-		"--yolo", // Auto-approve all tool operations (like Claude's --dangerously-skip-permissions)
+	var args []string
+
+	// Resume existing session if available
+	if cfg.SessionID != "" {
+		args = []string{
+			"--resume", cfg.SessionID,
+			"-p", task,
+			"--output-format", "stream-json",
+			"--yolo",
+		}
+	} else {
+		args = []string{
+			"-p", task,
+			"--output-format", "stream-json",
+			"--yolo",
+		}
 	}
 
 	// Only add model flag if different from default

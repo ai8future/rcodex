@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// StreamEvent represents a parsed stream-json event from Claude
+// StreamEvent represents a parsed stream-json event from Claude or Gemini
 type StreamEvent struct {
 	Type         string          `json:"type"`
 	Subtype      string          `json:"subtype,omitempty"`
@@ -19,6 +19,7 @@ type StreamEvent struct {
 	IsError      bool            `json:"is_error,omitempty"`
 	Usage        *TokenUsage     `json:"usage,omitempty"`
 	TotalCostUSD float64         `json:"total_cost_usd,omitempty"`
+	Stats        *GeminiStats    `json:"stats,omitempty"` // Gemini CLI format
 }
 
 // TokenUsage represents token usage from a Claude run
@@ -27,6 +28,17 @@ type TokenUsage struct {
 	OutputTokens             int `json:"output_tokens"`
 	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`
 	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
+}
+
+// GeminiStats represents token stats from Gemini CLI's stream-json format
+type GeminiStats struct {
+	TotalTokens  int `json:"total_tokens"`
+	InputTokens  int `json:"input_tokens"`
+	OutputTokens int `json:"output_tokens"`
+	Cached       int `json:"cached"`
+	Input        int `json:"input"`
+	DurationMs   int `json:"duration_ms"`
+	ToolCalls    int `json:"tool_calls"`
 }
 
 // AssistantMsg represents a message from the assistant
@@ -265,10 +277,20 @@ func (p *StreamParser) handleUser(event StreamEvent) {
 
 // handleResult handles final result events
 func (p *StreamParser) handleResult(event StreamEvent) {
-	// Capture usage data from the result event
+	// Capture usage data from the result event (Claude format)
 	if event.Usage != nil {
 		p.Usage = event.Usage
 	}
+
+	// Capture usage data from Gemini format
+	if event.Stats != nil {
+		p.Usage = &TokenUsage{
+			InputTokens:         event.Stats.InputTokens,
+			OutputTokens:        event.Stats.OutputTokens,
+			CacheReadInputTokens: event.Stats.Cached,
+		}
+	}
+
 	if event.TotalCostUSD > 0 {
 		p.TotalCostUSD = event.TotalCostUSD
 	}

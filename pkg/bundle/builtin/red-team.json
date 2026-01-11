@@ -13,12 +13,12 @@
     {
       "name": "attack",
       "tool": "gemini",
-      "task": "You are a security researcher. Find vulnerabilities and write exploits.\n\n${steps.implementation.result}"
+      "task": "You are a security researcher. Find vulnerabilities and write exploits.\n\n${steps.implementation.stdout}"
     },
     {
       "name": "hardened",
       "tool": "claude",
-      "task": "Security researcher found these issues:\n\n${steps.attack.result}\n\nFix all vulnerabilities."
+      "task": "Security researcher found these issues:\n\n${steps.attack.stdout}\n\nFix all vulnerabilities."
     }
   ]
 }

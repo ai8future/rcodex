@@ -18,12 +18,12 @@
         {
           "name": "gemini-grades-claude",
           "tool": "gemini",
-          "task": "Grade this implementation 0-100. List specific issues.\n\n${steps.claude-impl.result}"
+          "task": "Grade this implementation 0-100. List specific issues.\n\n${steps.claude-impl.stdout}"
         },
         {
           "name": "claude-grades-gemini",
           "tool": "claude",
-          "task": "Grade this implementation 0-100. List specific issues.\n\n${steps.gemini-impl.result}"
+          "task": "Grade this implementation 0-100. List specific issues.\n\n${steps.gemini-impl.stdout}"
         }
       ]
     }

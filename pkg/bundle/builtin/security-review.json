@@ -13,7 +13,7 @@
     {
       "name": "synthesis",
       "tool": "claude",
-      "task": "Synthesize these security audits into a prioritized report:\n\nAudit 1:\n${steps.claude-audit.result}\n\nAudit 2:\n${steps.gemini-audit.result}"
+      "task": "Synthesize these security audits into a prioritized report:\n\nAudit 1:\n${steps.claude-audit.stdout}\n\nAudit 2:\n${steps.gemini-audit.stdout}"
     }
   ]
 }
