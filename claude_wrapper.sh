@@ -1,6 +1,6 @@
 #!/bin/bash
-# Wrapper to launch codex with proper PATH
-# Searches for Node.js in common locations
+# Wrapper to launch claude with proper PATH and skip permission prompts
+# Used by get_claude_status.py for automated status checking
 
 # Allow override via environment variable
 if [ -n "$RCODEGEN_NODE_PATH" ]; then
@@ -19,11 +19,11 @@ elif [ -d "/usr/local/bin" ]; then
     export PATH="/usr/local/bin:$PATH"
 fi
 
-# Verify codex is available
-if ! command -v codex &> /dev/null; then
-    echo "Error: codex not found in PATH" >&2
-    echo "Set RCODEGEN_NODE_PATH to the directory containing codex" >&2
+# Verify claude is available
+if ! command -v claude &> /dev/null; then
+    echo "Error: claude not found in PATH" >&2
+    echo "Set RCODEGEN_NODE_PATH to the directory containing claude" >&2
     exit 1
 fi
 
-exec codex "$@"
+exec claude --dangerously-skip-permissions "$@"
