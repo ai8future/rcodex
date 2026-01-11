@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-01-11
+
+### Added
+- **Colorful progress display** - New visual output with ANSI colors and box-drawing characters when running bundles
+- **Per-step progress boxes** - Each step shows numbered progress (Step 1/5), step name, and color-coded tool (magenta for Claude, yellow for Gemini, blue for Codex)
+- **Real-time completion feedback** - Completed steps show checkmark, cost, and duration inline
+- **Styled summary section** - Final summary with elapsed time, total cost, completion status, and token breakdown
+
+### Changed
+- Replaced plain text output with styled progress display using box-drawing characters (rounded corners)
+- Step timing now tracked individually for better progress visibility
+- Token counts displayed with cache hit/write breakdown
+
+### Technical Details
+- New `pkg/orchestrator/progress.go` with `ProgressDisplay` struct
+- Methods: `PrintHeader()`, `PrintStepStart()`, `PrintStepComplete()`, `PrintStepSkipped()`, `PrintSummary()`
+- ANSI color codes: cyan (borders), magenta (Claude), yellow (Gemini), green (success/cost), dim (metadata)
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.5.0] - 2026-01-11
 
 ### Added

@@ -101,9 +101,6 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 		return envelope.New().Failure("WORKSPACE_ERROR", err.Error()).Build(), err
 	}
 
-	fmt.Printf("Job ID: %s\n", ws.JobID)
-	fmt.Printf("Bundle: %s\n\n", b.Name)
-
 	// For article bundles, create a timestamped output directory
 	var outputDir string
 	if strings.HasPrefix(b.Name, "article") {
@@ -118,8 +115,11 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 		}
 		// Add output_dir to inputs so prompts can reference it
 		inputs["output_dir"] = outputDir
-		fmt.Printf("Output dir: %s\n\n", outputDir)
 	}
+
+	// Initialize progress display
+	progress := NewProgressDisplay(b, ws.JobID, inputs)
+	progress.PrintHeader()
 
 	// Create context
 	ctx := NewContext(inputs)
@@ -132,11 +132,12 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 
 	// Execute steps
 	for i, step := range b.Steps {
-		fmt.Printf("[%d/%d] %s...\n", i+1, len(b.Steps), step.Name)
+		stepStart := time.Now()
+		progress.PrintStepStart(i)
 
 		// Check condition
 		if step.If != "" && !EvaluateCondition(step.If, ctx) {
-			fmt.Printf("  Skipped (condition false)\n")
+			progress.PrintStepSkipped(i)
 			ctx.SetResult(step.Name, &envelope.Envelope{Status: envelope.StatusSkipped})
 			continue
 		}
@@ -190,6 +191,7 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 		}
 
 		// Track step stats for report
+		stepDuration := time.Since(stepStart)
 		isParallel := len(step.Parallel) > 0
 		stepStats = append(stepStats, StepStats{
 			Name:         step.Name,
@@ -198,29 +200,29 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 			Cost:         stepCost,
 			InputTokens:  stepIn,
 			OutputTokens: stepOut,
+			Duration:     stepDuration,
 		})
 
-		if stepCost > 0 || stepIn > 0 || stepOut > 0 {
-			fmt.Printf("  %s ($%.4f, in:%d out:%d)\n", env.Status, stepCost, stepIn, stepOut)
-		} else {
-			fmt.Printf("  %s\n", env.Status)
-		}
+		// Update progress display
+		success := env.Status != envelope.StatusFailure
+		progress.PrintStepComplete(i, stepCost, stepDuration, stepIn+stepOut, success)
 
 		if env.Status == envelope.StatusFailure {
+			progress.PrintFailure(step.Name, fmt.Errorf("step failed"))
 			return env, fmt.Errorf("step %s failed", step.Name)
+		}
+
+		// Print remaining pending steps
+		if i < len(b.Steps)-1 {
+			progress.PrintPendingSteps(i + 1)
 		}
 	}
 
 	duration := time.Since(start)
 
-	fmt.Printf("\nCompleted in %s\n", duration.Round(time.Second))
-	fmt.Printf("Total cost: $%.4f\n", totalCost)
-	fmt.Printf("Tokens: %d input, %d output", totalInputTokens, totalOutputTokens)
-	if totalCacheRead > 0 || totalCacheWrite > 0 {
-		fmt.Printf(" (cache: %d read, %d write)", totalCacheRead, totalCacheWrite)
-	}
-	fmt.Printf("\n")
-	fmt.Printf("Output: %s\n", ws.JobDir)
+	// Print summary
+	progress.PrintSummary(totalCost, totalInputTokens, totalOutputTokens, totalCacheRead, totalCacheWrite)
+	fmt.Printf("  %sOutput:%s %s\n\n", colorDim, colorReset, ws.JobDir)
 
 	// Generate run report for article bundles
 	if strings.HasPrefix(b.Name, "article") && outputDir != "" {
