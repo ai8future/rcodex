@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.13] - 2026-01-11
+
+### Changed
+- Drafted a 1000+ word productivity article on getting back your time in Seth Levine's style for docs/article-2026-01-11-11-09-30/draft-codex.md
+
 ## [1.3.12] - 2026-01-11
 
 ### Changed
