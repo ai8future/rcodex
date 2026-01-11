@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1] - 2026-01-11
+
+### Fixed
+- Fix format string bug in progress display header (extra %s specifier)
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.6.0] - 2026-01-11
 
 ### Added

@@ -155,7 +155,7 @@ func (p *ProgressDisplay) PrintHeader() {
 	w := p.width
 
 	// Top border
-	fmt.Printf("%s%s%s%s%s%s\n",
+	fmt.Printf("%s%s%s%s%s\n",
 		colorCyan, boxTopLeft,
 		strings.Repeat(boxHorizontal, w-2),
 		boxTopRight, colorReset)
