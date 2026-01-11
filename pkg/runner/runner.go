@@ -389,6 +389,18 @@ func (r *Runner) runMultipleReports(cfg *Config, workDir string) int {
 			continue
 		}
 
+		// Handle dry run mode
+		if cfg.DryRun {
+			task := r.TaskConfig.Tasks[reportType]
+			cmd := r.Tool.BuildCommand(cfg, workDir, task)
+			fmt.Printf("%s%sDry run - would execute %s:%s\n", Bold, Cyan, reportType, Reset)
+			fmt.Printf("  %sCommand:%s %s\n", Dim, Reset, cmd.Path)
+			fmt.Printf("  %sArgs:%s %v\n", Dim, Reset, cmd.Args[1:])
+			fmt.Printf("  %sDir:%s %s\n", Dim, Reset, cmd.Dir)
+			fmt.Println()
+			continue
+		}
+
 		reportStart := time.Now()
 		exitCode := r.executeCommand(cfg, workDir, r.TaskConfig.Tasks[reportType])
 		reportDuration := time.Since(reportStart)
