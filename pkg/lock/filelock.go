@@ -17,6 +17,28 @@ const (
 	Reset = "\033[0m"
 )
 
+// Lock timeout duration
+const lockTimeout = 5 * time.Minute
+
+// sanitizeIdentifier cleans the identifier for safe use in file
+func sanitizeIdentifier(id string) string {
+	if id == "" {
+		return "unknown"
+	}
+	// Remove path separators and control characters
+	result := strings.Map(func(r rune) rune {
+		if r < 32 || r == '/' || r == '\\' {
+			return '_'
+		}
+		return r
+	}, id)
+	// Limit length
+	if len(result) > 100 {
+		result = result[:100]
+	}
+	return result
+}
+
 // FileLock represents a file-based lock
 type FileLock struct {
 	file *os.File
@@ -52,10 +74,8 @@ func Acquire(identifier string, useLock bool) (*FileLock, error) {
 	lockPath := filepath.Join(lockDir, "rcodegen.lock")
 	lockInfoPath := filepath.Join(lockDir, "rcodegen.lock.info")
 
-	// Use provided identifier or try to determine it
-	if identifier == "" {
-		identifier = "unknown"
-	}
+	// Sanitize identifier for safe use
+	identifier = sanitizeIdentifier(identifier)
 
 	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil {
@@ -75,6 +95,11 @@ func Acquire(identifier string, useLock bool) (*FileLock, error) {
 		fmt.Printf("%sWaiting for %s%s%s%s to finish...%s\n", Dim, Cyan, holder, Reset, Dim, Reset)
 
 		for {
+			// Check for timeout
+			if time.Since(startWait) > lockTimeout {
+				lockFile.Close()
+				return nil, fmt.Errorf("timed out waiting for lock after %v", lockTimeout)
+			}
 			time.Sleep(5 * time.Second)
 			err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 			if err == nil {
@@ -93,7 +118,9 @@ func Acquire(identifier string, useLock bool) (*FileLock, error) {
 	}
 
 	// Write our info so others know who has the lock
-	os.WriteFile(lockInfoPath, []byte(identifier), 0600)
+	if err := os.WriteFile(lockInfoPath, []byte(identifier), 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "%sWarning: could not write lock info: %v%s\n", Dim, err, Reset)
+	}
 
 	return &FileLock{file: lockFile, path: lockPath}, nil
 }
@@ -104,8 +131,12 @@ func (l *FileLock) Release() error {
 		return nil
 	}
 
-	syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
-	return l.file.Close()
+	unlockErr := syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
+	closeErr := l.file.Close()
+	if unlockErr != nil {
+		return fmt.Errorf("failed to unlock: %w", unlockErr)
+	}
+	return closeErr
 }
 
 // GetIdentifier returns a reasonable identifier for the current process
