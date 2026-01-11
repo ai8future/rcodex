@@ -89,6 +89,11 @@ func IsReportReviewed(filepath string) bool {
 		lineCount++
 	}
 
+	// Check for scanner errors (I/O errors are treated as unreviewed)
+	if err := scanner.Err(); err != nil {
+		return false
+	}
+
 	return false
 }
 
