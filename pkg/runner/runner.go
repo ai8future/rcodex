@@ -27,6 +27,19 @@ type Runner struct {
 	SettingsOK   bool
 }
 
+// RunResult holds the result of a Run() invocation
+type RunResult struct {
+	ExitCode     int
+	TokenUsage   *TokenUsage
+	TotalCostUSD float64
+	Error        error
+}
+
+// runError creates a RunResult for an error condition
+func runError(code int, err error) *RunResult {
+	return &RunResult{ExitCode: code, Error: err}
+}
+
 // NewRunner creates a new Runner for the given tool
 func NewRunner(tool Tool) *Runner {
 	return &Runner{
@@ -39,14 +52,23 @@ type SettingsAware interface {
 	SetSettings(s *settings.Settings)
 }
 
+// RunAndExit runs the task and exits with the appropriate code
+// This is the entry point for CLI binaries
+func (r *Runner) RunAndExit() {
+	result := r.Run()
+	if result.Error != nil {
+		fmt.Fprintln(os.Stderr, result.Error)
+	}
+	os.Exit(result.ExitCode)
+}
+
 // Run is the main entry point - loads settings, parses args, and executes
-func (r *Runner) Run() {
+func (r *Runner) Run() *RunResult {
 	// Load settings from settings.json (or run interactive setup)
 	var ok bool
 	r.Settings, ok = settings.LoadOrSetup()
 	if !ok {
-		fmt.Fprintln(os.Stderr, "Setup cancelled or failed. Exiting.")
-		os.Exit(1)
+		return runError(1, fmt.Errorf("setup cancelled or failed"))
 	}
 	r.SettingsOK = true
 
@@ -59,7 +81,14 @@ func (r *Runner) Run() {
 	}
 
 	// Parse command line arguments
-	cfg := r.parseArgs()
+	cfg, err := r.parseArgs()
+	if err != nil {
+		return runError(1, err)
+	}
+	if cfg == nil {
+		// Help or tasks were shown, exit cleanly
+		return &RunResult{ExitCode: 0}
+	}
 
 	// Regenerate TaskConfig with actual codebase name for pattern substitution
 	if cfg.Codebase != "" {
@@ -73,8 +102,7 @@ func (r *Runner) Run() {
 		reportDir = cfg.OutputDir
 		// Create the output directory if it doesn't exist
 		if err := os.MkdirAll(reportDir, 0755); err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating output directory %s: %v\n", reportDir, err)
-			os.Exit(1)
+			return runError(1, fmt.Errorf("error creating output directory %s: %v", reportDir, err))
 		}
 	}
 	for name, prompt := range r.TaskConfig.Tasks {
@@ -86,14 +114,13 @@ func (r *Runner) Run() {
 	// Handle status-only mode
 	if cfg.StatusOnly {
 		r.Tool.ShowStatus()
-		os.Exit(0)
+		return &RunResult{ExitCode: 0}
 	}
 
 	// Validate task is provided
 	if cfg.Task == "" {
-		fmt.Fprintln(os.Stderr, "Error: No task provided.")
 		r.printUsage()
-		os.Exit(1)
+		return runError(1, fmt.Errorf("no task provided"))
 	}
 
 	// Prepare tool for execution (deferred expensive setup)
@@ -108,8 +135,7 @@ func (r *Runner) Run() {
 	for _, workDir := range cfg.WorkDirs {
 		if workDir != "" {
 			if info, err := os.Stat(workDir); err != nil || !info.IsDir() {
-				fmt.Fprintf(os.Stderr, "Error: Directory does not exist: %s\n", workDir)
-				os.Exit(1)
+				return runError(1, fmt.Errorf("directory does not exist: %s", workDir))
 			}
 		}
 	}
@@ -124,8 +150,7 @@ func (r *Runner) Run() {
 		var err error
 		lockHandle, err = lock.Acquire(identifier, true)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+			return runError(1, err)
 		}
 		defer lockHandle.Release()
 	}
@@ -193,7 +218,11 @@ func (r *Runner) Run() {
 	// Write run log file
 	r.writeRunLog(cfg, primaryWorkDir, overallStart, endTime, overallExit)
 
-	os.Exit(overallExit)
+	return &RunResult{
+		ExitCode:     overallExit,
+		TokenUsage:   cfg.TokenUsage,
+		TotalCostUSD: cfg.TotalCostUSD,
+	}
 }
 
 // runForWorkDir runs the task for a single working directory
@@ -418,7 +447,10 @@ func (r *Runner) printDetailedSummary(cfg *Config, workDir string, startTime tim
 }
 
 // parseArgs parses command line arguments
-func (r *Runner) parseArgs() *Config {
+// Returns (*Config, nil) on success
+// Returns (nil, nil) when help or tasks were shown (exit 0)
+// Returns (nil, error) on error (exit 1)
+func (r *Runner) parseArgs() (*Config, error) {
 	cfg := NewConfig()
 
 	// Apply tool defaults
@@ -442,7 +474,7 @@ func (r *Runner) parseArgs() *Config {
 
 	// Check for conflicting duplicate flags before parsing
 	if err := CheckDuplicateFlags(os.Args[1:], flagGroups); err != nil {
-		ExitWithError("%v", err)
+		return nil, err
 	}
 
 	// Extract -x flags before standard flag parsing
@@ -489,20 +521,20 @@ func (r *Runner) parseArgs() *Config {
 		cfg.TrackStatus = false
 	}
 
-	// Handle special flags
+	// Handle special flags - return nil config to signal exit 0
 	if showHelp {
 		r.printUsage()
-		os.Exit(0)
+		return nil, nil
 	}
 
 	if showTasks {
 		r.listTasks()
-		os.Exit(0)
+		return nil, nil
 	}
 
 	// Validate tool-specific configuration
 	if err := r.Tool.ValidateConfig(cfg); err != nil {
-		ExitWithError("%v", err)
+		return nil, err
 	}
 
 	// Set working directories (supports comma-separated list)
@@ -594,13 +626,13 @@ func (r *Runner) parseArgs() *Config {
 				}
 			}
 			if len(missing) > 0 {
-				ExitWithError("Missing variables: %s%s%s\nUse %s-x name=value%s to provide them",
-					Green, strings.Join(missing, ", "), Reset, Green, Reset)
+				return nil, fmt.Errorf("missing variables: %s\nUse -x name=value to provide them",
+					strings.Join(missing, ", "))
 			}
 		}
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 // defineToolSpecificFlags defines flags specific to this tool

@@ -26,6 +26,10 @@ venv/
 *.exe
 *.test
 .gocache/
+/rcodex
+/rclaude
+/rgemini
+/rcodegen
 
 # Node
 node_modules/

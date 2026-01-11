@@ -2,11 +2,11 @@ package main
 
 import (
 	"rcodegen/pkg/runner"
-	"rcodegen/pkg/tools/gemini"
+	"rcodegen/pkg/tools/claude"
 )
 
 func main() {
-	tool := gemini.New()
+	tool := claude.New()
 	r := runner.NewRunner(tool)
 	r.RunAndExit()
 }
