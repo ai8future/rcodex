@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.2] - 2026-01-11
+
+### Added
+- Show output directory in progress header for article bundles
+- Print generated article filenames at end of article bundle runs
+- Print grade (letter and score) at end of build bundle runs
+- Show topic input as task for article bundles in progress display
+- Show "parallel" as tool type for parallel steps
+
+### Changed
+- Add cyan color for parallel steps in progress display
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.6.1] - 2026-01-11
 
 ### Fixed

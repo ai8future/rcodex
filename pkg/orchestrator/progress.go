@@ -68,6 +68,7 @@ type ProgressDisplay struct {
 	jobID       string
 	projectName string
 	task        string
+	outputDir   string
 	steps       []StepProgress
 	startTime   time.Time
 	width       int
@@ -77,14 +78,22 @@ type ProgressDisplay struct {
 func NewProgressDisplay(b *bundle.Bundle, jobID string, inputs map[string]string) *ProgressDisplay {
 	steps := make([]StepProgress, len(b.Steps))
 	for i, step := range b.Steps {
+		tool := step.Tool
+		if tool == "" && len(step.Parallel) > 0 {
+			// For parallel steps, show "parallel" or combine tool names
+			tool = "parallel"
+		}
 		steps[i] = StepProgress{
 			Name:  step.Name,
-			Tool:  step.Tool,
+			Tool:  tool,
 			State: StepPending,
 		}
 	}
 
 	task := inputs["task"]
+	if task == "" {
+		task = inputs["topic"] // Fallback to topic for article bundles
+	}
 	if len(task) > 60 {
 		task = task[:57] + "..."
 	}
@@ -94,6 +103,7 @@ func NewProgressDisplay(b *bundle.Bundle, jobID string, inputs map[string]string
 		jobID:       jobID,
 		projectName: inputs["project_name"],
 		task:        task,
+		outputDir:   inputs["output_dir"],
 		steps:       steps,
 		startTime:   time.Now(),
 		width:       72,
@@ -109,6 +119,8 @@ func toolColor(tool string) string {
 		return colorYellow
 	case "codex":
 		return colorBlue
+	case "parallel":
+		return colorCyan
 	default:
 		return colorWhite
 	}
@@ -189,6 +201,9 @@ func (p *ProgressDisplay) PrintHeader() {
 	}
 	if p.task != "" {
 		fmt.Printf("  %sTask:%s %s\"%s\"%s\n", colorDim, colorReset, colorDim, p.task, colorReset)
+	}
+	if p.outputDir != "" {
+		fmt.Printf("  %sOutput:%s %s\n", colorDim, colorReset, p.outputDir)
 	}
 	fmt.Println()
 }

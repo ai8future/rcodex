@@ -228,6 +228,16 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 	if strings.HasPrefix(b.Name, "article") && outputDir != "" {
 		reportPath := filepath.Join(outputDir, "Run Report.md")
 		generateRunReport(reportPath, ws.JobID, b.Name, duration, totalCost, stepStats, ctx, outputDir)
+
+		// Print generated articles
+		articles := findArticleFilesInDir(outputDir)
+		if len(articles) > 0 {
+			fmt.Printf("  %sGenerated Articles:%s\n", colorDim, colorReset)
+			for _, a := range articles {
+				fmt.Printf("    %s•%s %s\n", colorGreen, colorReset, filepath.Base(a))
+			}
+			fmt.Println()
+		}
 	}
 
 	// Generate final-report.json and copy bundle for build bundles
@@ -260,6 +270,19 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 				inputs,
 				ctx,
 			)
+
+			// Print grade if available
+			grade := extractGradeFromReport(filepath.Join(projectDir, "final-report.md"))
+			if grade != nil {
+				fmt.Printf("  %sGrade:%s %s%s%s (%d/100)\n",
+					colorDim, colorReset,
+					colorGreen, grade.Letter, colorReset,
+					grade.Score)
+				fmt.Println()
+			}
+
+			// Print output directory
+			fmt.Printf("  %sProject Output:%s %s\n\n", colorDim, colorReset, projectDir)
 		}
 	}
 
