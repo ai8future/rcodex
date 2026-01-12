@@ -25,6 +25,7 @@ import (
 type StepStats struct {
 	Name         string
 	Tool         string
+	Model        string
 	Parallel     bool
 	Cost         float64
 	InputTokens  int
@@ -44,6 +45,7 @@ type Display interface {
 	Start()
 	Stop()
 	SetStepRunning(stepIndex int)
+	SetStepModel(stepIndex int, model string)
 	SetStepComplete(stepIndex int, cost float64, duration time.Duration, tokens int, success bool)
 	SetStepSkipped(stepIndex int)
 	PrintFinalSummary(totalCost float64, totalInputTokens, totalOutputTokens int, cacheRead, cacheWrite int)
@@ -214,12 +216,19 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 			totalCacheWrite += t
 		}
 
+		// Extract model used
+		stepModel := ""
+		if m, ok := env.Result["model"].(string); ok {
+			stepModel = m
+		}
+
 		// Track step stats for report
 		stepDuration := time.Since(stepStart)
 		isParallel := len(step.Parallel) > 0
 		stepStats = append(stepStats, StepStats{
 			Name:         step.Name,
 			Tool:         step.Tool,
+			Model:        stepModel,
 			Parallel:     isParallel,
 			Cost:         stepCost,
 			InputTokens:  stepIn,
@@ -228,6 +237,7 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 		})
 
 		// Update display
+		display.SetStepModel(i, stepModel)
 		success := env.Status != envelope.StatusFailure
 		display.SetStepComplete(i, stepCost, stepDuration, stepIn+stepOut, success)
 

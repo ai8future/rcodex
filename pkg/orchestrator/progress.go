@@ -56,6 +56,7 @@ const (
 type StepProgress struct {
 	Name     string
 	Tool     string
+	Model    string
 	State    StepState
 	Cost     float64
 	Duration time.Duration
@@ -173,6 +174,13 @@ func (p *ProgressDisplay) Stop() {}
 // SetStepRunning implements Display interface
 func (p *ProgressDisplay) SetStepRunning(stepIndex int) {
 	p.PrintStepStart(stepIndex)
+}
+
+// SetStepModel implements Display interface
+func (p *ProgressDisplay) SetStepModel(stepIndex int, model string) {
+	if stepIndex >= 0 && stepIndex < len(p.steps) {
+		p.steps[stepIndex].Model = model
+	}
 }
 
 // SetStepComplete implements Display interface

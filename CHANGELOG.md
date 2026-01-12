@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.7] - 2026-01-12
+
+### Added
+- **Model display** - Steps now show the specific model used (e.g., "Claude/Sonnet" instead of just "Claude")
+- Model info tracked in StepStats for reporting
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.7.6] - 2026-01-12
 
 ### Fixed

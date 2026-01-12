@@ -60,6 +60,7 @@ type LiveDisplay struct {
 type LiveStep struct {
 	Name      string
 	Tool      string
+	Model     string
 	State     StepState
 	Cost      float64
 	Duration  time.Duration
@@ -362,10 +363,32 @@ func (d *LiveDisplay) renderStep(index int, step *LiveStep) {
 	toolClr := toolColor(step.Tool)
 	toolName := strings.Title(step.Tool)
 
-	fmt.Printf("  %s%s%s  %-12s %s%-8s%s%s%s\n",
+	// Show tool/model (e.g., "Claude/Sonnet" or just "Claude")
+	toolDisplay := toolName
+	if step.Model != "" {
+		modelName := strings.Title(step.Model)
+		// Shorten common model names
+		switch step.Model {
+		case "sonnet":
+			modelName = "Sonnet"
+		case "opus":
+			modelName = "Opus"
+		case "haiku":
+			modelName = "Haiku"
+		case "gemini-3":
+			modelName = "3"
+		case "gemini-2":
+			modelName = "2"
+		case "gpt-5.2-codex":
+			modelName = "5.2"
+		}
+		toolDisplay = fmt.Sprintf("%s/%s", toolName, modelName)
+	}
+
+	fmt.Printf("  %s%s%s  %-12s %s%-14s%s%s%s\n",
 		iconColor, icon, colorReset,
 		step.Name,
-		toolClr, toolName, colorReset,
+		toolClr, toolDisplay, colorReset,
 		statusInfo, clearLine)
 }
 
@@ -379,6 +402,16 @@ func (d *LiveDisplay) SetStepRunning(stepIndex int) {
 		d.steps[stepIndex].StartTime = time.Now()
 		d.currentStep = stepIndex
 		d.liveOutput = "" // Clear live output for new step
+	}
+}
+
+// SetStepModel sets the model used for a step
+func (d *LiveDisplay) SetStepModel(stepIndex int, model string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if stepIndex >= 0 && stepIndex < len(d.steps) {
+		d.steps[stepIndex].Model = model
 	}
 }
 

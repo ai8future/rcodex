@@ -116,6 +116,7 @@ func (e *ToolExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context, ws 
 		WithResult("output_tokens", usage.OutputTokens).
 		WithResult("cache_read_tokens", usage.CacheReadTokens).
 		WithResult("cache_write_tokens", usage.CacheWriteTokens).
+		WithResult("model", cfg.Model).
 		Build(), nil
 }
 
