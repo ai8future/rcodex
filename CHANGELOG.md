@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.14] - 2026-01-12
+
+### Added
+- **claude_question_handler.py** - New iTerm2 script to detect and answer Claude Code multiple choice questions
+  - `list` - List all sessions with question detection
+  - `detect` - Get JSON of current question and options
+  - `answer N` - Select option by number
+  - `answer --text "..."` - Type custom response
+  - `watch` - Poll for questions and output JSON when detected
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.7.13] - 2026-01-12
 
 ### Improved
