@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.6] - 2026-01-12
+
+### Fixed
+- **Final step display** - Added final render before summary to show last step (audit) with checkmark and cost
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.7.5] - 2026-01-12
 
 ### Fixed

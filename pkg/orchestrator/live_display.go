@@ -420,6 +420,12 @@ func (d *LiveDisplay) UpdateCost(cost float64) {
 
 // PrintFinalSummary prints the final summary after animation stops
 func (d *LiveDisplay) PrintFinalSummary(totalCost float64, totalInputTokens, totalOutputTokens int, cacheRead, cacheWrite int) {
+	// Do a final render to show all steps with their final state
+	d.mu.Lock()
+	d.totalCost = totalCost // Update cost before final render
+	d.render()
+	d.mu.Unlock()
+
 	duration := time.Since(d.startTime)
 
 	// Count successes and failures
