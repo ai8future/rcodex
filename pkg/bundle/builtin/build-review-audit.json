@@ -30,6 +30,7 @@
     {
       "name": "audit",
       "tool": "claude",
+      "model": "opus",
       "task": "Final audit and grading.\n\nContext:\n${steps.test.stdout}\n\n1. Review test results at ${inputs.output_dir}/${inputs.project_name}/test-results.md\n2. Read all code in ${inputs.output_dir}/${inputs.project_name}/src/\n3. Run your own verification\n4. Audit for: bugs, security, code quality, architecture, documentation\n\nGrade using this rubric (bonus points allowed for exceptional work):\n- functionality (20 max): Does it work as specified?\n- code_quality (20 max): Clean, readable, documented\n- security (10 max): No vulnerabilities\n- user_experience (20 max): Intuitive, helpful errors\n- architecture (10 max): Clean separation, maintainable\n- testing (10 max): Verification coverage\n- innovation (5 max): Creative solutions\n- documentation (5 max): README, comments, guides\n\nWrite a comprehensive final-report.md including:\n- Executive summary\n- What was built\n- Strengths of the implementation\n- Weaknesses and areas for improvement\n- Multi-model collaboration analysis\n- Final grade with detailed justification\n- Recommendations for future development\n\nIMPORTANT: At the END of your report, output this exact JSON block with your scores:\n```json\n{\"grade\":{\"score\":N,\"letter\":\"X\",\"functionality\":N,\"code_quality\":N,\"security\":N,\"user_experience\":N,\"architecture\":N,\"testing\":N,\"innovation\":N,\"documentation\":N}}\n```\n\nSave to: ${inputs.output_dir}/${inputs.project_name}/final-report.md"
     }
   ]
