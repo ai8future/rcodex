@@ -169,6 +169,12 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 	} else {
 		display = NewProgressDisplay(b, ws.JobID, inputs)
 	}
+
+	// Set models for ALL steps upfront so they show immediately
+	for i, step := range b.Steps {
+		display.SetStepModel(i, o.getStepModel(step.Tool, step.Model))
+	}
+
 	display.Start()
 	defer display.Stop()
 

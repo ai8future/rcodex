@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.11] - 2026-01-12
+
+### Fixed
+- **All steps show models upfront** - Pending steps now show model names immediately (e.g., Gemini/3, Claude/Opus)
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.7.10] - 2026-01-12
 
 ### Changed
