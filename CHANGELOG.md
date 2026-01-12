@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.10] - 2026-01-12
+
+### Changed
+- **Live text output** - Shows actual AI text output instead of just "Thinking..."
+- Added emojis to tool actions (📖 Reading, ✏️ Writing, ⚡ Running, 🔍 Searching, etc.)
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.7.9] - 2026-01-12
 
 ### Changed

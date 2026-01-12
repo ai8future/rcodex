@@ -185,60 +185,81 @@ func extractMeaningfulContent(line string) string {
 	// Remove ANSI codes first
 	line = stripAnsi(line)
 
-	// Check for tool use FIRST - this is the most useful status indicator
-	// Claude uses "name":"ToolName" inside tool_use, Gemini may use "tool_name"
+	// Skip system/init/result messages early
+	if strings.Contains(line, `"type":"system"`) || strings.Contains(line, `"type":"init"`) {
+		return ""
+	}
+	if strings.Contains(line, `"type":"result"`) {
+		return ""
+	}
+
+	// Check for tool use - show tool action
 	if strings.Contains(line, `"tool_use"`) || strings.Contains(line, `"type":"tool_use"`) {
 		if strings.Contains(line, `"name":"Read"`) {
-			return "Reading files..."
+			return "📖 Reading files..."
 		}
 		if strings.Contains(line, `"name":"Write"`) {
-			return "Writing code..."
+			return "✏️  Writing code..."
 		}
 		if strings.Contains(line, `"name":"Bash"`) {
-			return "Running command..."
+			return "⚡ Running command..."
 		}
 		if strings.Contains(line, `"name":"Edit"`) {
-			return "Editing files..."
+			return "✏️  Editing files..."
 		}
 		if strings.Contains(line, `"name":"Glob"`) {
-			return "Searching files..."
+			return "🔍 Searching files..."
 		}
 		if strings.Contains(line, `"name":"Grep"`) {
-			return "Searching content..."
+			return "🔍 Searching content..."
 		}
 		if strings.Contains(line, `"name":"TodoWrite"`) {
-			return "Updating tasks..."
+			return "📝 Updating tasks..."
 		}
 		if strings.Contains(line, `"name":"Task"`) {
-			return "Spawning agent..."
+			return "🤖 Spawning agent..."
 		}
 		if strings.Contains(line, `"name":"WebFetch"`) {
-			return "Fetching URL..."
+			return "🌐 Fetching URL..."
 		}
 		if strings.Contains(line, `"name":"WebSearch"`) {
-			return "Searching web..."
+			return "🌐 Searching web..."
 		}
-		return "Using tools..."
+		return "🔧 Using tools..."
+	}
+
+	// Try to extract actual text content from assistant messages
+	// Format: {"type":"assistant","message":{"content":[{"type":"text","text":"actual content"}]}}
+	if strings.Contains(line, `"type":"text"`) && strings.Contains(line, `"text":"`) {
+		// Find the text content
+		if idx := strings.Index(line, `"text":"`); idx != -1 {
+			rest := line[idx+8:]
+			// Find the closing quote (handle escaped quotes)
+			end := 0
+			for i := 0; i < len(rest); i++ {
+				if rest[i] == '"' && (i == 0 || rest[i-1] != '\\') {
+					end = i
+					break
+				}
+			}
+			if end > 0 {
+				text := rest[:end]
+				// Unescape common sequences
+				text = strings.ReplaceAll(text, `\n`, " ")
+				text = strings.ReplaceAll(text, `\"`, `"`)
+				text = strings.ReplaceAll(text, `\\`, `\`)
+				text = strings.TrimSpace(text)
+				// Skip empty or whitespace-only
+				if len(text) > 0 {
+					return text
+				}
+			}
+		}
 	}
 
 	// Check for tool_result (tool finished)
 	if strings.Contains(line, `"tool_result"`) || strings.Contains(line, `"type":"tool_result"`) {
-		return "Processing result..."
-	}
-
-	// Look for assistant text streaming
-	if strings.Contains(line, `"type":"assistant"`) && strings.Contains(line, `"type":"text"`) {
-		return "Thinking..."
-	}
-
-	// Skip system/init messages
-	if strings.Contains(line, `"type":"system"`) || strings.Contains(line, `"type":"init"`) {
-		return ""
-	}
-
-	// Skip result messages (end of run)
-	if strings.Contains(line, `"type":"result"`) {
-		return ""
+		return "📋 Processing result..."
 	}
 
 	// If line is short enough and looks like status, use it
