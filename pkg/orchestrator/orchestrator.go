@@ -58,6 +58,7 @@ var DispatcherFactory func(tools map[string]runner.Tool) StepExecutor
 type Orchestrator struct {
 	settings   *settings.Settings
 	dispatcher StepExecutor
+	tools      map[string]runner.Tool
 	liveMode   bool
 	opusOnly   bool
 }
@@ -88,7 +89,25 @@ func New(s *settings.Settings) *Orchestrator {
 	return &Orchestrator{
 		settings:   s,
 		dispatcher: dispatcher,
+		tools:      tools,
 	}
+}
+
+// getStepModel returns the model that will be used for a step
+func (o *Orchestrator) getStepModel(toolName, stepModel string) string {
+	// If opus-only is set and tool is claude, always use opus
+	if o.opusOnly && toolName == "claude" {
+		return "opus"
+	}
+	// Use step's model if specified
+	if stepModel != "" {
+		return stepModel
+	}
+	// Use tool's default model
+	if tool, ok := o.tools[toolName]; ok {
+		return tool.DefaultModel()
+	}
+	return ""
 }
 
 func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelope.Envelope, error) {
@@ -166,6 +185,8 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 	for i, step := range b.Steps {
 		stepStart := time.Now()
 		display.SetStepRunning(i)
+		// Set model immediately so it shows while running
+		display.SetStepModel(i, o.getStepModel(step.Tool, step.Model))
 
 		// Check condition
 		if step.If != "" && !EvaluateCondition(step.If, ctx) {

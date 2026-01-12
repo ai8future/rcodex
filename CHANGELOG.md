@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.9] - 2026-01-12
+
+### Changed
+- **Model shows immediately** - Model name (e.g., Claude/Sonnet) now displays as soon as step starts, not after completion
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.7.8] - 2026-01-12
 
 ### Added
