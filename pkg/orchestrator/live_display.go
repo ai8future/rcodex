@@ -183,65 +183,64 @@ func extractMeaningfulContent(line string) string {
 	// Remove ANSI codes first
 	line = stripAnsi(line)
 
-	// Skip pure JSON structure lines
-	if strings.HasPrefix(line, "{") || strings.HasPrefix(line, "}") ||
-		strings.HasPrefix(line, "[") || strings.HasPrefix(line, "]") {
-		return ""
-	}
-
-	// Look for content in stream-json format: {"type":"...", "content":"..."}
-	if strings.Contains(line, `"content"`) {
-		// Simple extraction - find content value
-		if idx := strings.Index(line, `"content"`); idx != -1 {
-			rest := line[idx+10:] // skip `"content":`
-			// Find the string value
-			if start := strings.Index(rest, `"`); start != -1 {
-				rest = rest[start+1:]
-				if end := strings.Index(rest, `"`); end != -1 {
-					content := rest[:end]
-					if len(content) > 0 && content != "\\n" {
-						return content
-					}
-				}
-			}
-		}
-	}
-
-	// Look for assistant_response or message content
-	if strings.Contains(line, `"assistant_response"`) || strings.Contains(line, `"message"`) {
-		return "[Processing...]"
-	}
-
-	// Look for tool use indicators (Claude uses "name":"ToolName", Gemini may use "tool_name")
-	if strings.Contains(line, `"tool_use"`) || strings.Contains(line, `"name":"`) {
-		if strings.Contains(line, `"name":"Read"`) || strings.Contains(line, `"Read"`) {
+	// Check for tool use FIRST - this is the most useful status indicator
+	// Claude uses "name":"ToolName" inside tool_use, Gemini may use "tool_name"
+	if strings.Contains(line, `"tool_use"`) || strings.Contains(line, `"type":"tool_use"`) {
+		if strings.Contains(line, `"name":"Read"`) {
 			return "Reading files..."
 		}
-		if strings.Contains(line, `"name":"Write"`) || strings.Contains(line, `"Write"`) {
+		if strings.Contains(line, `"name":"Write"`) {
 			return "Writing code..."
 		}
-		if strings.Contains(line, `"name":"Bash"`) || strings.Contains(line, `"Bash"`) {
+		if strings.Contains(line, `"name":"Bash"`) {
 			return "Running command..."
 		}
-		if strings.Contains(line, `"name":"Edit"`) || strings.Contains(line, `"Edit"`) {
+		if strings.Contains(line, `"name":"Edit"`) {
 			return "Editing files..."
 		}
-		if strings.Contains(line, `"name":"Glob"`) || strings.Contains(line, `"Glob"`) {
+		if strings.Contains(line, `"name":"Glob"`) {
 			return "Searching files..."
 		}
-		if strings.Contains(line, `"name":"Grep"`) || strings.Contains(line, `"Grep"`) {
+		if strings.Contains(line, `"name":"Grep"`) {
 			return "Searching content..."
 		}
 		if strings.Contains(line, `"name":"TodoWrite"`) {
 			return "Updating tasks..."
 		}
-		if strings.Contains(line, `"tool_use"`) {
-			return "Using tools..."
+		if strings.Contains(line, `"name":"Task"`) {
+			return "Spawning agent..."
 		}
+		if strings.Contains(line, `"name":"WebFetch"`) {
+			return "Fetching URL..."
+		}
+		if strings.Contains(line, `"name":"WebSearch"`) {
+			return "Searching web..."
+		}
+		return "Using tools..."
+	}
+
+	// Check for tool_result (tool finished)
+	if strings.Contains(line, `"tool_result"`) || strings.Contains(line, `"type":"tool_result"`) {
+		return "Processing result..."
+	}
+
+	// Look for assistant text streaming
+	if strings.Contains(line, `"type":"assistant"`) && strings.Contains(line, `"type":"text"`) {
+		return "Thinking..."
+	}
+
+	// Skip system/init messages
+	if strings.Contains(line, `"type":"system"`) || strings.Contains(line, `"type":"init"`) {
+		return ""
+	}
+
+	// Skip result messages (end of run)
+	if strings.Contains(line, `"type":"result"`) {
+		return ""
 	}
 
 	// If line is short enough and looks like status, use it
-	if len(line) > 5 && len(line) < 80 && !strings.HasPrefix(line, `"`) {
+	if len(line) > 5 && len(line) < 80 && !strings.HasPrefix(line, `"`) && !strings.HasPrefix(line, "{") {
 		return line
 	}
 

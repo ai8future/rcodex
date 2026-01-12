@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.4] - 2026-01-12
+
+### Fixed
+- **Live display content extraction** - Fixed tool activity detection by checking `"type":"tool_use"` BEFORE other patterns
+- Added detection for Task, WebFetch, WebSearch tools
+- Skip system/init/result JSON messages that contain no useful status
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.7.3] - 2026-01-12
 
 ### Fixed
