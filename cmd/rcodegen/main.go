@@ -132,14 +132,38 @@ func printUsage() {
 	fmt.Println(`rcodegen - Multi-tool orchestrator
 
 Usage:
-  rcodegen <bundle> -c <codebase> [inputs...]
-  rcodegen bundle <name> -c <codebase> [key=value...]
+  rcodegen <bundle> [options] [inputs...]
   rcodegen list
 
+Options:
+  -c <path>      Codebase path (or run from within project directory)
+  --opus-only    Force all Claude steps to use Opus model
+  --static       Use static display instead of animated
+  -j             Output JSON
+
+Inputs:
+  key=value      Named input (e.g., project_name=myapp)
+  "text"         Positional argument becomes 'task' input
+
 Examples:
-  rcodegen compete -c myproject task="audit for security issues"
-  rcodegen security-review -c myproject
+  rcodegen build-review-audit -c ~/projects/myapp "Add user authentication"
+  rcodegen build-review-audit project_name=myapp "Build a CLI tool" --opus-only
+  rcodegen security-review -c ./myproject
   rcodegen list`)
+
+	// Show available bundles
+	names, err := bundle.List()
+	if err == nil && len(names) > 0 {
+		fmt.Println("\nAvailable bundles:")
+		for _, name := range names {
+			b, err := bundle.Load(name)
+			if err == nil {
+				fmt.Printf("  %-20s %s\n", name, b.Description)
+			} else {
+				fmt.Printf("  %s\n", name)
+			}
+		}
+	}
 }
 
 func expandPath(path string) string {

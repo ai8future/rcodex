@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.13] - 2026-01-12
+
+### Improved
+- **Better help output** - Shows all available options, inputs format, and lists all bundles with descriptions
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.7.12] - 2026-01-12
 
 ### Fixed
