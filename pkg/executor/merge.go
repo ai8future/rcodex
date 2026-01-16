@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -17,10 +18,12 @@ type MergeExecutor struct {
 func (e *MergeExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context, ws *workspace.Workspace) (*envelope.Envelope, error) {
 	// Collect inputs
 	var contents []string
+	var failedInputs []string
 	for _, inputRef := range step.Merge.Inputs {
 		path := ctx.Resolve(inputRef)
 		data, err := os.ReadFile(path)
 		if err != nil {
+			failedInputs = append(failedInputs, fmt.Sprintf("%s: %v", inputRef, err))
 			continue
 		}
 		contents = append(contents, string(data))
@@ -50,5 +53,6 @@ func (e *MergeExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context, ws
 		Success().
 		WithOutputRef(outputPath).
 		WithResult("input_count", len(contents)).
+		WithResult("failed_inputs", failedInputs).
 		Build(), nil
 }

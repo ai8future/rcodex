@@ -22,7 +22,10 @@ type Workspace struct {
 func GenerateJobID() string {
 	now := time.Now()
 	b := make([]byte, 4)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback: use nanoseconds if crypto/rand fails
+		return fmt.Sprintf("%s-%08x", now.Format("20060102-150405"), now.UnixNano()&0xFFFFFFFF)
+	}
 	return fmt.Sprintf("%s-%s", now.Format("20060102-150405"), hex.EncodeToString(b))
 }
 
