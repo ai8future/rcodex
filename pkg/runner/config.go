@@ -1,16 +1,19 @@
 package runner
 
-// ANSI color codes for terminal output
+import "rcodegen/pkg/colors"
+
+// Re-export color constants from colors package for backwards compatibility.
+// New code should import rcodegen/pkg/colors directly.
 const (
-	Bold    = "\033[1m"
-	Dim     = "\033[2m"
-	Red     = "\033[31m"
-	Green   = "\033[32m"
-	Yellow  = "\033[33m"
-	Magenta = "\033[35m"
-	Cyan    = "\033[36m"
-	White   = "\033[37m"
-	Reset   = "\033[0m"
+	Bold    = colors.Bold
+	Dim     = colors.Dim
+	Red     = colors.Red
+	Green   = colors.Green
+	Yellow  = colors.Yellow
+	Magenta = colors.Magenta
+	Cyan    = colors.Cyan
+	White   = colors.White
+	Reset   = colors.Reset
 )
 
 // Display formatting constants
@@ -42,8 +45,10 @@ type Config struct {
 	// Tool-specific fields (only some tools use these)
 	MaxBudget   string // Claude: max budget in USD
 	Effort      string // Codex: reasoning effort level
-	TrackStatus bool   // Codex: track credit usage before/after
+	TrackStatus   bool // Codex: track credit usage before/after
+	NoTrackStatus bool // User explicitly disabled status tracking via -S flag
 	SessionID   string // Session ID for resuming previous session
+	Flash       bool   // Gemini: use flash model variant
 
 	// Execution control
 	DryRun bool // If true, show what would be executed without running

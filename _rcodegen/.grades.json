@@ -1,0 +1,144 @@
+{
+  "grades": [
+    {
+      "date": "2026-01-16T13:54:00.000Z",
+      "tool": "claude",
+      "task": "quick",
+      "grade": 72,
+      "reportFile": "claude-rcodegen-quick-2026-01-16_1454.md"
+    },
+    {
+      "date": "2026-01-16T13:55:00.000Z",
+      "tool": "gemini",
+      "task": "refactor",
+      "grade": 87,
+      "reportFile": "gemini-rcodegen-refactor-2026-01-16_1455.md"
+    },
+    {
+      "date": "2026-01-16T21:15:00.000Z",
+      "tool": "gemini",
+      "task": "audit",
+      "grade": 78,
+      "reportFile": "gemini-rcodegen-audit-2026-01-16_2215.md"
+    },
+    {
+      "date": "2026-01-16T22:25:00.000Z",
+      "tool": "codex",
+      "task": "audit",
+      "grade": 78,
+      "reportFile": "codex-rcodegen-audit-2026-01-16_2325.md"
+    },
+    {
+      "date": "2026-01-16T22:27:00.000Z",
+      "tool": "gemini",
+      "task": "audit",
+      "grade": 84,
+      "reportFile": "gemini-rcodegen-audit-2026-01-16_2327.md"
+    },
+    {
+      "date": "2026-01-16T22:28:00.000Z",
+      "tool": "gemini",
+      "task": "test",
+      "grade": 68,
+      "reportFile": "gemini-rcodegen-test-2026-01-16_2328.md"
+    },
+    {
+      "date": "2026-01-16T22:34:00.000Z",
+      "tool": "codex",
+      "task": "audit",
+      "grade": 78,
+      "reportFile": "codex-rcodegen-audit-2026-01-16_2334.md"
+    },
+    {
+      "date": "2026-01-16T22:34:00.000Z",
+      "tool": "codex",
+      "task": "test",
+      "grade": 68,
+      "reportFile": "codex-rcodegen-test-2026-01-16_2334.md"
+    },
+    {
+      "date": "2026-01-16T22:36:00.000Z",
+      "tool": "claude",
+      "task": "audit",
+      "grade": 82,
+      "reportFile": "claude-rcodegen-audit-2026-01-16_2336.md"
+    },
+    {
+      "date": "2026-01-16T22:38:00.000Z",
+      "tool": "codex",
+      "task": "test",
+      "grade": 45,
+      "reportFile": "codex-rcodegen-test-2026-01-16_2338.md"
+    },
+    {
+      "date": "2026-01-16T22:39:00.000Z",
+      "tool": "claude",
+      "task": "test",
+      "grade": 32,
+      "reportFile": "claude-rcodegen-test-2026-01-16_2339.md"
+    },
+    {
+      "date": "2026-01-16T22:40:00.000Z",
+      "tool": "gemini",
+      "task": "fix",
+      "grade": 82,
+      "reportFile": "gemini-rcodegen-fix-2026-01-16_2340.md"
+    },
+    {
+      "date": "2026-01-16T22:43:00.000Z",
+      "tool": "claude",
+      "task": "fix",
+      "grade": 78,
+      "reportFile": "claude-rcodegen-fix-2026-01-16_2343.md"
+    },
+    {
+      "date": "2026-01-16T22:45:00.000Z",
+      "tool": "gemini",
+      "task": "quick",
+      "grade": 88,
+      "reportFile": "gemini-rcodegen-quick-2026-01-16_2345.md"
+    },
+    {
+      "date": "2026-01-16T22:46:00.000Z",
+      "tool": "claude",
+      "task": "refactor",
+      "grade": 78,
+      "reportFile": "claude-rcodegen-refactor-2026-01-16_2346.md"
+    },
+    {
+      "date": "2026-01-16T22:50:00.000Z",
+      "tool": "codex",
+      "task": "fix",
+      "grade": 84,
+      "reportFile": "codex-rcodegen-fix-2026-01-16_2350.md"
+    },
+    {
+      "date": "2026-01-16T22:55:00.000Z",
+      "tool": "codex",
+      "task": "refactor",
+      "grade": 82,
+      "reportFile": "codex-rcodegen-refactor-2026-01-16_2355.md"
+    },
+    {
+      "date": "2026-01-16T23:00:00.000Z",
+      "tool": "codex",
+      "task": "quick",
+      "grade": 84,
+      "reportFile": "codex-rcodegen-quick-2026-01-17_0000.md"
+    },
+    {
+      "date": "2026-01-16T23:01:00.000Z",
+      "tool": "codex",
+      "task": "fix",
+      "grade": 87,
+      "reportFile": "codex-rcodegen-fix-2026-01-17_0001.md"
+    },
+    {
+      "date": "2026-01-16T23:07:00.000Z",
+      "tool": "codex",
+      "task": "refactor",
+      "grade": 82,
+      "reportFile": "codex-rcodegen-refactor-2026-01-17_0007.md"
+    }
+  ]
+}

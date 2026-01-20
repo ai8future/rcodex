@@ -49,12 +49,12 @@ func (t *Tool) ReportPrefix() string {
 
 // ValidModels returns the list of valid model names
 func (t *Tool) ValidModels() []string {
-	return []string{"gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-pro", "gemini-2.0-flash", "gemini-3"}
+	return []string{"gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-pro", "gemini-2.0-flash", "gemini-3-pro-preview", "gemini-3-flash-preview"}
 }
 
 // DefaultModel returns the default model name
 func (t *Tool) DefaultModel() string {
-	return "gemini-3"
+	return "gemini-3-pro-preview"
 }
 
 // DefaultModelSetting returns the default model from settings
@@ -125,8 +125,14 @@ func (t *Tool) PrintStatusSummary(before, after interface{}) {
 
 // ToolSpecificFlags returns Gemini-specific flag definitions
 func (t *Tool) ToolSpecificFlags() []runner.FlagDef {
-	// No tool-specific flags for now
-	return nil
+	return []runner.FlagDef{
+		{
+			Long:        "--flash",
+			Description: "Use gemini-3-flash-preview model",
+			TakesArg:    false,
+			Target:      "Flash",
+		},
+	}
 }
 
 // ApplyToolDefaults applies Gemini-specific defaults from settings
@@ -139,24 +145,16 @@ func (t *Tool) ApplyToolDefaults(cfg *runner.Config) {
 
 // PrepareForExecution does expensive setup after task validation
 func (t *Tool) PrepareForExecution(cfg *runner.Config) {
-	// No expensive initialization needed for Gemini
+	// Override model if --flash flag is set
+	if cfg.Flash {
+		cfg.Model = "gemini-3-flash-preview"
+	}
 }
 
 // ValidateConfig validates Gemini-specific configuration
 func (t *Tool) ValidateConfig(cfg *runner.Config) error {
-	// Validate model
-	validModels := map[string]bool{
-		"gemini-2.5-pro":   true,
-		"gemini-2.5-flash": true,
-		"gemini-2.0-pro":   true,
-		"gemini-2.0-flash": true,
-		"gemini-3":         true,
-	}
-	if !validModels[cfg.Model] {
-		return fmt.Errorf("invalid model '%s'. Valid options: gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-pro, gemini-2.0-flash, gemini-3", cfg.Model)
-	}
-
-	return nil
+	// Validate model using shared helper
+	return runner.ValidateModel(t, cfg.Model)
 }
 
 // BannerTitle returns the title for the startup banner
@@ -190,8 +188,14 @@ func (t *Tool) SecurityWarning() []string {
 
 // ToolSpecificHelpSections returns Gemini-specific help text sections
 func (t *Tool) ToolSpecificHelpSections() []runner.HelpSection {
-	// No Gemini-specific help sections for now
-	return nil
+	return []runner.HelpSection{
+		{
+			Title: "Gemini Options",
+			Lines: []string{
+				"  " + runner.Green + "--flash" + runner.Reset + "            Use gemini-3-flash-preview instead of gemini-3-pro-preview",
+			},
+		},
+	}
 }
 
 // StatsJSONFields returns Gemini-specific fields for JSON stats output

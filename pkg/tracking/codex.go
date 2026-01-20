@@ -6,16 +6,19 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"rcodegen/pkg/colors"
 )
 
-// ANSI color codes
+// Re-export color constants from colors package for backwards compatibility.
+// New code should import rcodegen/pkg/colors directly.
 const (
-	Bold   = "\033[1m"
-	Dim    = "\033[2m"
-	Green  = "\033[32m"
-	Cyan   = "\033[36m"
-	Yellow = "\033[33m"
-	Reset  = "\033[0m"
+	Bold   = colors.Bold
+	Dim    = colors.Dim
+	Green  = colors.Green
+	Cyan   = colors.Cyan
+	Yellow = colors.Yellow
+	Reset  = colors.Reset
 )
 
 // CreditStatus holds the parsed credit status from Python script

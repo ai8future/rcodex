@@ -110,6 +110,11 @@ func (r *Runner) Run() *RunResult {
 	// Substitute {report_dir} in the task being executed (don't mutate shared TaskConfig)
 	cfg.Task = strings.ReplaceAll(cfg.Task, "{report_dir}", reportDir)
 
+	// Substitute {timestamp} with current time in YYYY-MM-DD_HHMM format
+	// This ensures consistent timestamps across all tools (Gemini doesn't have real-time access)
+	timestamp := time.Now().Format("2006-01-02_1504")
+	cfg.Task = strings.ReplaceAll(cfg.Task, "{timestamp}", timestamp)
+
 	// Handle status-only mode
 	if cfg.StatusOnly {
 		r.Tool.ShowStatus()

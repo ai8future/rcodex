@@ -115,3 +115,69 @@ func CommonFlagGroups() []FlagAliases {
 		{Names: []string{"-R", "--require-review"}, TakesArg: false},
 	}
 }
+
+// reorderArgsForFlagParsing moves all flags to the front so Go's flag package
+// can parse them correctly (it stops at the first non-flag argument)
+func reorderArgsForFlagParsing(args []string, flagGroups []FlagAliases) []string {
+	// Build a set of known flags for quick lookup
+	knownFlags := make(map[string]bool)
+	flagTakesArg := make(map[string]bool)
+	for _, group := range flagGroups {
+		for _, name := range group.Names {
+			knownFlags[name] = true
+			flagTakesArg[name] = group.TakesArg
+		}
+	}
+	// Add common flags that might not be in flagGroups
+	commonFlags := []string{"-h", "--help", "-t", "--tasks", "-n", "--dry-run", "-o", "--output"}
+	for _, f := range commonFlags {
+		knownFlags[f] = true
+	}
+	flagTakesArg["-o"] = true
+	flagTakesArg["--output"] = true
+
+	var flagArgs []string
+	var positionalArgs []string
+
+	i := 0
+	for i < len(args) {
+		arg := args[i]
+
+		// Check if it's a flag
+		if strings.HasPrefix(arg, "-") {
+			// Check for --flag=value format
+			if eqIdx := strings.Index(arg, "="); eqIdx > 0 {
+				flagName := arg[:eqIdx]
+				if knownFlags[flagName] {
+					flagArgs = append(flagArgs, arg)
+					i++
+					continue
+				}
+			}
+
+			// Check if it's a known flag
+			if knownFlags[arg] {
+				flagArgs = append(flagArgs, arg)
+				// If it takes an argument, include the next arg too
+				if flagTakesArg[arg] && i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					flagArgs = append(flagArgs, args[i])
+				}
+				i++
+				continue
+			}
+
+			// Unknown flag - still treat as flag (might be tool-specific)
+			flagArgs = append(flagArgs, arg)
+			i++
+			continue
+		}
+
+		// It's a positional argument
+		positionalArgs = append(positionalArgs, arg)
+		i++
+	}
+
+	// Return flags first, then positional args
+	return append(flagArgs, positionalArgs...)
+}

@@ -20,7 +20,7 @@ func PrintStartupBanner(tool Tool, cfg *Config) {
 	if cfg.TaskShortcut != "" {
 		fmt.Printf("%s%s%s", Yellow, cfg.TaskShortcut, Reset)
 		if cfg.TaskShortcut == "suite" {
-			fmt.Printf(" %s(audit → test → fix → refactor)%s", Dim, Reset)
+			fmt.Printf(" %s(audit → test → fix → refactor → quick)%s", Dim, Reset)
 		}
 	} else {
 		// Truncate custom task if too long

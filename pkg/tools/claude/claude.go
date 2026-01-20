@@ -293,19 +293,18 @@ func (t *Tool) ApplyToolDefaults(cfg *runner.Config) {
 
 // PrepareForExecution does expensive setup after task validation
 func (t *Tool) PrepareForExecution(cfg *runner.Config) {
-	// Default to tracking status for Claude Max users
-	// This check also caches the status for later use
-	if t.IsClaudeMax() {
+	// Default to tracking status for Claude Max users, unless explicitly disabled
+	// Check NoTrackStatus FIRST to avoid calling IsClaudeMax() which opens iTerm window
+	if !cfg.NoTrackStatus && t.IsClaudeMax() {
 		cfg.TrackStatus = true
 	}
 }
 
 // ValidateConfig validates Claude-specific configuration
 func (t *Tool) ValidateConfig(cfg *runner.Config) error {
-	// Validate model
-	validModels := map[string]bool{"opus": true, "sonnet": true, "haiku": true}
-	if !validModels[cfg.Model] {
-		return fmt.Errorf("invalid model '%s'. Valid options: opus, sonnet, haiku", cfg.Model)
+	// Validate model using shared helper
+	if err := runner.ValidateModel(t, cfg.Model); err != nil {
+		return err
 	}
 
 	// Validate budget is a positive number
@@ -336,7 +335,8 @@ func (t *Tool) BannerSubtitle() string {
 // PrintToolSpecificBannerFields prints Claude-specific fields in the banner
 func (t *Tool) PrintToolSpecificBannerFields(cfg *runner.Config) {
 	// Don't show budget for Claude Max users (subscription-based)
-	if t.IsClaudeMax() {
+	// Check NoTrackStatus first to avoid calling IsClaudeMax() which opens iTerm window
+	if !cfg.NoTrackStatus && t.IsClaudeMax() {
 		return
 	}
 	fmt.Printf("  %s%sBudget:%s        %s$%s%s per run\n", runner.Bold, runner.Green, runner.Reset, runner.Yellow, cfg.MaxBudget, runner.Reset)
@@ -345,7 +345,8 @@ func (t *Tool) PrintToolSpecificBannerFields(cfg *runner.Config) {
 // PrintToolSpecificSummaryFields prints Claude-specific fields in the summary
 func (t *Tool) PrintToolSpecificSummaryFields(cfg *runner.Config) {
 	// Don't show budget for Claude Max users (subscription-based)
-	if t.IsClaudeMax() {
+	// Check NoTrackStatus first to avoid calling IsClaudeMax() which opens iTerm window
+	if !cfg.NoTrackStatus && t.IsClaudeMax() {
 		return
 	}
 	fmt.Printf("  %sMax budget:%s   $%s\n", runner.Dim, runner.Reset, cfg.MaxBudget)
@@ -400,7 +401,8 @@ func (t *Tool) RunLogFields(cfg *runner.Config) []string {
 		"Model:  " + cfg.Model,
 	}
 	// Only include budget for non-Claude Max users
-	if !t.IsClaudeMax() {
+	// Check NoTrackStatus first to avoid calling IsClaudeMax() which opens iTerm window
+	if cfg.NoTrackStatus || !t.IsClaudeMax() {
 		fields = append(fields, "Budget: $"+cfg.MaxBudget)
 	}
 	return fields

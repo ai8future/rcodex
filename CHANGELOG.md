@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.6] - 2026-01-20
+
+### Fixed
+- **Gemini timestamp accuracy** - Report filenames now use programmatically-generated timestamps via `{timestamp}` variable instead of relying on LLMs to determine the time. Fixes issue where Gemini produced rounded timestamps (1200, 1000) due to lack of real-time clock access.
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.8.5] - 2026-01-20
 
 ### Added

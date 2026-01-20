@@ -61,6 +61,7 @@ func runBundle() {
 	liveMode := fs.Bool("live", true, "Enable animated live display (default: true)")
 	staticMode := fs.Bool("static", false, "Use static display instead of animated")
 	opusOnly := fs.Bool("opus-only", false, "Force all Claude steps to use Opus model")
+	flashOnly := fs.Bool("flash", false, "Force all Gemini steps to use flash preview model")
 
 	fs.Parse(flagArgs)
 
@@ -104,6 +105,9 @@ func runBundle() {
 	if *opusOnly {
 		orch.SetOpusOnly(true)
 	}
+	if *flashOnly {
+		orch.SetFlashOnly(true)
+	}
 	env, err := orch.Run(b, inputs)
 
 	if *jsonOutput {
@@ -138,6 +142,7 @@ Usage:
 Options:
   -c <path>      Codebase path (or run from within project directory)
   --opus-only    Force all Claude steps to use Opus model
+  --flash        Force all Gemini steps to use flash preview model
   --static       Use static display instead of animated
   -j             Output JSON
 
