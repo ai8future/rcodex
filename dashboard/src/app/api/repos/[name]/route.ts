@@ -24,16 +24,29 @@ interface ReportDetail {
   size: number
 }
 
+// Known tool names for format detection
+const KNOWN_TOOLS = ['claude', 'gemini', 'codex']
+
+// Supports both old and new filename formats:
+// Old: {tool}-{codebase}-{task}-{date}.md (e.g., claude-dispatch-audit-2026-01-16_2331.md)
+// New: {codebase}-{tool}-{task}-{date}.md (e.g., dispatch-claude-audit-2026-01-20_2204.md)
 function parseReportFilename(filename: string): { tool: string; codebase: string; task: string; date: string } | null {
-  // Pattern: {codebase}-{tool}-{task}-{date}.md
   const match = filename.match(/^(.+)-([a-z]+)-([a-z]+)-(\d{4}-\d{2}-\d{2}_\d{4})\.md$/)
   if (!match) return null
-  return {
-    codebase: match[1],
-    tool: match[2],
-    task: match[3],
-    date: match[4]
+
+  const segment1 = match[1]
+  const segment2 = match[2]
+  const segment3 = match[3]
+  const date = match[4]
+
+  // Detect format by checking if segment1 is a known tool (old format)
+  if (KNOWN_TOOLS.includes(segment1.toLowerCase())) {
+    return { tool: segment1, codebase: segment2, task: segment3, date }
+  } else if (KNOWN_TOOLS.includes(segment2.toLowerCase())) {
+    return { codebase: segment1, tool: segment2, task: segment3, date }
   }
+
+  return { codebase: segment1, tool: segment2, task: segment3, date }
 }
 
 function parseDate(dateStr: string): Date {

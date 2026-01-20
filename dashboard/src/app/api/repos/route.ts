@@ -187,20 +187,34 @@ function migrateRepoGrades(rcodgenDir: string): number {
   return added
 }
 
-// Stricter filename pattern: tool and task must be lowercase letters only
+// Known tool names for format detection
+const KNOWN_TOOLS = ['claude', 'gemini', 'codex']
+
+// Supports both old and new filename formats:
+// Old: {tool}-{codebase}-{task}-{date}.md (e.g., claude-dispatch-audit-2026-01-16_2331.md)
+// New: {codebase}-{tool}-{task}-{date}.md (e.g., dispatch-claude-audit-2026-01-20_2204.md)
 function parseReportFilename(filename: string): { tool: string; codebase: string; task: string; date: string } | null {
-  // Pattern: {codebase}-{tool}-{task}-{date}.md
-  // Codebase: any characters (greedy, since it comes first)
-  // Tool and task: lowercase letters only (a-z)
-  // Date: YYYY-MM-DD_HHMM format
+  // Flexible pattern that matches both formats
   const match = filename.match(/^(.+)-([a-z]+)-([a-z]+)-(\d{4}-\d{2}-\d{2}_\d{4})\.md$/)
   if (!match) return null
-  return {
-    codebase: match[1],
-    tool: match[2],
-    task: match[3],
-    date: match[4]
+
+  const segment1 = match[1]
+  const segment2 = match[2]
+  const segment3 = match[3]
+  const date = match[4]
+
+  // Detect format by checking if segment1 is a known tool (old format)
+  // or if segment2 is a known tool (new format)
+  if (KNOWN_TOOLS.includes(segment1.toLowerCase())) {
+    // Old format: {tool}-{codebase}-{task}
+    return { tool: segment1, codebase: segment2, task: segment3, date }
+  } else if (KNOWN_TOOLS.includes(segment2.toLowerCase())) {
+    // New format: {codebase}-{tool}-{task}
+    return { codebase: segment1, tool: segment2, task: segment3, date }
   }
+
+  // Fallback: assume new format (codebase first)
+  return { codebase: segment1, tool: segment2, task: segment3, date }
 }
 
 // Parse date with explicit UTC timezone

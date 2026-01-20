@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.11] - 2026-01-20
+
+### Fixed
+- **Support for both old and new filename formats** - Dashboard and Go parser now auto-detect and handle both `{tool}-{codebase}-{task}` (old) and `{codebase}-{tool}-{task}` (new) filename formats. This ensures historical reports are still displayed correctly alongside newer reports.
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.8.10] - 2026-01-20
 
 ### Fixed

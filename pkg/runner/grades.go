@@ -34,9 +34,17 @@ var gradePatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)(?:score|rating|points?)[:=]?\s*(\d+(?:\.\d+)?)\s*/\s*100`),
 }
 
-// Report filename pattern: {codebase}-{tool}-{task}-{YYYY-MM-DD_HHMM}.md
-// Case-insensitive for tool and task
+// Report filename pattern - flexible to support both old and new formats:
+// Old: {tool}-{codebase}-{task}-{YYYY-MM-DD_HHMM}.md
+// New: {codebase}-{tool}-{task}-{YYYY-MM-DD_HHMM}.md
 var reportFilenamePattern = regexp.MustCompile(`(?i)^(.+)-([a-z]+)-([a-z]+)-(\d{4}-\d{2}-\d{2}_\d{4})\.md$`)
+
+// Known tool names for format detection
+var knownTools = map[string]bool{
+	"claude": true,
+	"gemini": true,
+	"codex":  true,
+}
 
 // File lock for grades.json operations
 var gradesFileMutex sync.Mutex
@@ -65,18 +73,38 @@ func ExtractGradeFromReport(reportPath string) (float64, error) {
 }
 
 // ParseReportFilename extracts tool, codebase, task, and date from filename
+// Supports both old and new filename formats:
+// Old: {tool}-{codebase}-{task}-{date}.md (e.g., claude-dispatch-audit-2026-01-16_2331.md)
+// New: {codebase}-{tool}-{task}-{date}.md (e.g., dispatch-claude-audit-2026-01-20_2204.md)
 func ParseReportFilename(filename string) (tool, codebase, task string, date time.Time, err error) {
 	matches := reportFilenamePattern.FindStringSubmatch(filename)
 	if len(matches) < 5 {
 		return "", "", "", time.Time{}, fmt.Errorf("filename does not match expected pattern: %s", filename)
 	}
 
-	// Normalize to lowercase for consistency
-	// Pattern: {codebase}-{tool}-{task}-{timestamp}.md
-	codebase = matches[1]
-	tool = strings.ToLower(matches[2])
-	task = strings.ToLower(matches[3])
+	segment1 := matches[1]
+	segment2 := strings.ToLower(matches[2])
+	segment3 := strings.ToLower(matches[3])
 	dateStr := matches[4]
+
+	// Detect format by checking if segment1 is a known tool (old format)
+	// or if segment2 is a known tool (new format)
+	if knownTools[strings.ToLower(segment1)] {
+		// Old format: {tool}-{codebase}-{task}
+		tool = strings.ToLower(segment1)
+		codebase = segment2
+		task = segment3
+	} else if knownTools[segment2] {
+		// New format: {codebase}-{tool}-{task}
+		codebase = segment1
+		tool = segment2
+		task = segment3
+	} else {
+		// Fallback: assume new format
+		codebase = segment1
+		tool = segment2
+		task = segment3
+	}
 
 	// Parse date: 2026-01-16_2336 -> 2026-01-16T23:36:00Z
 	date, err = time.Parse("2006-01-02_1504", dateStr)
