@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.8] - 2026-01-20
+
+### Fixed
+- **Missing codebase in report filenames** - Fixed bug where report filenames had empty codebase (e.g., `gemini--test-` instead of `gemini-chatapp-test-`). TaskConfig regeneration now happens before task shortcut expansion.
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.8.7] - 2026-01-20
 
 ### Fixed

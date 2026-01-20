@@ -92,11 +92,6 @@ func (r *Runner) Run() *RunResult {
 		return &RunResult{ExitCode: 0}
 	}
 
-	// Regenerate TaskConfig with actual codebase name for pattern substitution
-	if cfg.Codebase != "" {
-		r.TaskConfig = r.Settings.ToTaskConfig(cfg.Codebase, r.Tool.ReportPrefix())
-	}
-
 	// Substitute {report_dir} in all task prompts
 	// Use custom output dir if specified, otherwise use unified _rcodegen directory
 	reportDir := r.Tool.ReportDir()
@@ -783,6 +778,12 @@ func (r *Runner) parseArgs() (*Config, error) {
 	// Apply settings default for output directory if not specified via CLI
 	if cfg.OutputDir == "" && r.Settings.OutputDir != "" {
 		cfg.OutputDir = r.Settings.OutputDir
+	}
+
+	// Regenerate TaskConfig with codebase name BEFORE expanding task shortcuts
+	// This ensures {report_file} patterns include the correct codebase name
+	if cfg.Codebase != "" {
+		r.TaskConfig = r.Settings.ToTaskConfig(cfg.Codebase, r.Tool.ReportPrefix())
 	}
 
 	// Get task from remaining args
