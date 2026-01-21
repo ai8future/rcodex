@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.14] - 2026-01-21
+
+### Fixed
+- **Exact report filenames** - Report filenames now include the actual timestamp directly (e.g., `dispatch-claude-audit-2026-01-21_0337.md`) instead of relying on LLMs to interpret `[date]`. This eliminates filename inconsistencies across different LLM tools.
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.8.13] - 2026-01-21
 
 ### Fixed
