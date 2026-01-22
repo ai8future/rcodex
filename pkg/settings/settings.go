@@ -190,14 +190,17 @@ func LoadWithFallback() (*Settings, bool) {
 	if settings.DefaultBuildDir == "" {
 		settings.DefaultBuildDir = settings.CodeDir // Default to code_dir if not set
 	}
-	// Merge default tasks - user tasks override defaults
+	// Check for reserved task name overrides before merging
+	if err := ValidateNoReservedTaskOverrides(settings.Tasks); err != nil {
+		fmt.Fprintf(os.Stderr, "%sError:%s %v\n", yellow, reset, err)
+		os.Exit(1)
+	}
+	// Merge default tasks - custom user tasks with non-reserved names are allowed
 	if settings.Tasks == nil {
 		settings.Tasks = make(map[string]TaskDef)
 	}
 	for name, task := range GetDefaultTasks() {
-		if _, exists := settings.Tasks[name]; !exists {
-			settings.Tasks[name] = task
-		}
+		settings.Tasks[name] = task // Always use built-in defaults for reserved names
 	}
 	return settings, true
 }
@@ -319,6 +322,37 @@ func GetDefaultTasks() map[string]TaskDef {
 			Prompt: "You ARE allowed to write reports to the {report_dir} directory. Run a complete study of this code - analyzing how it works, what it does, as well as how it interacts with other services and interacts with outside codebases. Look for motivations and try to understand notes in the code for why it does things certain ways. Write a detailed report you store in {report_dir}. Save your file as {report_file} (exact filename). IMPORTANT: At the very top of the report, include this line exactly:\nDate Created: [full timestamp]\nDO NOT EDIT CODE.",
 		},
 	}
+}
+
+// GetReservedTaskNames returns the list of built-in task names that cannot be overridden
+func GetReservedTaskNames() []string {
+	defaults := GetDefaultTasks()
+	names := make([]string, 0, len(defaults))
+	for name := range defaults {
+		names = append(names, name)
+	}
+	return names
+}
+
+// ValidateNoReservedTaskOverrides checks if settings.json tries to override built-in tasks
+// Returns an error listing all conflicting task names, or nil if no conflicts
+func ValidateNoReservedTaskOverrides(tasks map[string]TaskDef) error {
+	if tasks == nil {
+		return nil
+	}
+	defaults := GetDefaultTasks()
+	var conflicts []string
+	for name := range tasks {
+		if _, isReserved := defaults[name]; isReserved {
+			conflicts = append(conflicts, name)
+		}
+	}
+	if len(conflicts) > 0 {
+		return fmt.Errorf("settings.json contains reserved task names that cannot be overridden: %v\n"+
+			"These tasks are built into rcodegen. Remove them from your settings.json to use the defaults.\n"+
+			"You can add custom tasks with different names (e.g., 'my-audit' instead of 'audit').", conflicts)
+	}
+	return nil
 }
 
 // RunInteractiveSetup runs an interactive setup wizard to create the settings file
@@ -571,14 +605,17 @@ func RunInteractiveSetup() (*Settings, bool) {
 func LoadOrSetup() (*Settings, bool) {
 	settings, err := Load()
 	if err == nil {
-		// Merge default tasks - user tasks override defaults
+		// Check for reserved task name overrides before merging
+		if err := ValidateNoReservedTaskOverrides(settings.Tasks); err != nil {
+			fmt.Fprintf(os.Stderr, "%sError:%s %v\n", yellow, reset, err)
+			os.Exit(1)
+		}
+		// Merge default tasks - custom user tasks with non-reserved names are allowed
 		if settings.Tasks == nil {
 			settings.Tasks = make(map[string]TaskDef)
 		}
 		for name, task := range GetDefaultTasks() {
-			if _, exists := settings.Tasks[name]; !exists {
-				settings.Tasks[name] = task
-			}
+			settings.Tasks[name] = task // Always use built-in defaults for reserved names
 		}
 		return settings, true
 	}

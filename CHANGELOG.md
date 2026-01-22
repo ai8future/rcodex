@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.1] - 2026-01-22
+
+### Added
+- **Reserved task name protection** - App now exits with error if `settings.json` contains task overrides for built-in names (`audit`, `test`, `fix`, `refactor`, `quick`, `grade`, `generate`, `study`). Custom tasks must use different names (e.g., `my-audit`).
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.9.0] - 2026-01-22
 
 ### Fixed
