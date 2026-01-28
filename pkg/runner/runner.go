@@ -547,6 +547,53 @@ func (r *Runner) printDetailedSummary(cfg *Config, workDir string, startTime tim
 	fmt.Printf("%s%s══════════════════════════════════════════%s\n", Bold, Cyan, Reset)
 }
 
+// discoverDirectories finds git repositories up to maxLevels depth.
+// Only includes directories containing a .git subdirectory.
+// Skips hidden directories and common non-project dirs.
+func discoverDirectories(root string, maxLevels int) ([]string, error) {
+	var dirs []string
+
+	info, err := os.Stat(root)
+	if err != nil || !info.IsDir() {
+		return nil, fmt.Errorf("not a valid directory: %s", root)
+	}
+
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		// Skip hidden and common non-project directories
+		if strings.HasPrefix(name, ".") ||
+			name == "node_modules" || name == "vendor" || name == "__pycache__" {
+			continue
+		}
+
+		fullPath := filepath.Join(root, name)
+
+		// Check if this is a git repository
+		gitDir := filepath.Join(fullPath, ".git")
+		if _, err := os.Stat(gitDir); err == nil {
+			// Found a git repo - add it
+			dirs = append(dirs, fullPath)
+		} else if maxLevels > 1 {
+			// Not a git repo but can go deeper
+			subDirs, err := discoverDirectories(fullPath, maxLevels-1)
+			if err != nil {
+				continue // Skip inaccessible dirs
+			}
+			dirs = append(dirs, subDirs...)
+		}
+		// If maxLevels == 1 and no .git, skip this directory
+	}
+	return dirs, nil
+}
+
 // setWorkingDirectories configures the working directories based on -c or -d flags.
 // Returns an error if -c is used but code_dir is not configured.
 func (r *Runner) setWorkingDirectories(cfg *Config, codePath, dirPath string) error {
@@ -712,6 +759,9 @@ func (r *Runner) parseArgs() (*Config, error) {
 	flag.BoolVar(&showHelp, "help", false, "Show help message")
 	flag.BoolVar(&migrateGrades, "migrate-grades", false, "Migrate existing reports to .grades.json")
 	flag.BoolVar(&migrateGradesAll, "migrate-grades-all", false, "Migrate grades for all repos in code directory")
+	flag.BoolVar(&cfg.Recursive, "r", false, "Recursively scan subdirectories for git repos")
+	flag.BoolVar(&cfg.Recursive, "recursive", false, "Recursively scan subdirectories for git repos")
+	flag.IntVar(&cfg.RecurseLevels, "levels", 1, "Depth of recursive directory scan")
 
 	// Define tool-specific flags
 	r.defineToolSpecificFlags(cfg)
@@ -774,6 +824,38 @@ func (r *Runner) parseArgs() (*Config, error) {
 	// Set working directories (supports comma-separated list)
 	if err := r.setWorkingDirectories(cfg, codePath, dirPath); err != nil {
 		return nil, err
+	}
+
+	// Handle recursive directory scanning
+	if cfg.Recursive {
+		if cfg.RecurseLevels < 1 {
+			cfg.RecurseLevels = 1
+		}
+		if cfg.RecurseLevels > 10 {
+			return nil, fmt.Errorf("--levels cannot exceed 10")
+		}
+
+		baseDirs := cfg.WorkDirs
+		if len(baseDirs) == 0 {
+			cwd, _ := os.Getwd()
+			baseDirs = []string{cwd}
+		}
+
+		var expanded []string
+		for _, base := range baseDirs {
+			found, err := discoverDirectories(base, cfg.RecurseLevels)
+			if err != nil {
+				return nil, fmt.Errorf("recursive scan failed: %v", err)
+			}
+			expanded = append(expanded, found...)
+		}
+
+		if len(expanded) == 0 {
+			return nil, fmt.Errorf("no git repositories found with --recursive")
+		}
+
+		cfg.WorkDirs = expanded
+		cfg.Codebase = filepath.Base(expanded[0])
 	}
 
 	// Apply settings default for output directory if not specified via CLI
@@ -951,7 +1033,9 @@ func (r *Runner) printUsage() {
 	fmt.Printf("                        %s(comma-separated for multiple: -c proj1,proj2)%s\n", Dim, Reset)
 	fmt.Printf("  %s-d%s, %s--dir%s %s<path>%s      Set working directory to absolute path\n", Green, Reset, Green, Reset, Yellow, Reset)
 	fmt.Printf("                        %s(comma-separated for multiple: -d /a,/b)%s\n", Dim, Reset)
-	fmt.Printf("  %s-o%s, %s--output%s %s<path>%s   Output directory for reports %s(replaces _rcodegen)%s\n\n", Green, Reset, Green, Reset, Yellow, Reset, Dim, Reset)
+	fmt.Printf("  %s-o%s, %s--output%s %s<path>%s   Output directory for reports %s(replaces _rcodegen)%s\n", Green, Reset, Green, Reset, Yellow, Reset, Dim, Reset)
+	fmt.Printf("  %s-r%s, %s--recursive%s       Scan for git repos and run in each\n", Green, Reset, Green, Reset)
+	fmt.Printf("  %s--levels%s %s<N>%s         Depth of recursive scan %s(default: 1)%s\n\n", Green, Reset, Yellow, Reset, Dim, Reset)
 
 	// Execution Options
 	fmt.Printf("%s%sExecution Options:%s\n", Bold, Cyan, Reset)

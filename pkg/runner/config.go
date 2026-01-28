@@ -42,6 +42,10 @@ type Config struct {
 	OriginalCmd   string            // Original command string for display
 	Vars          map[string]string // User-defined variables from -x flags
 
+	// Recursive directory scanning
+	Recursive     bool // Enable recursive directory scanning (-r)
+	RecurseLevels int  // Depth of scan (--levels, default 1)
+
 	// Tool-specific fields (only some tools use these)
 	MaxBudget   string // Claude: max budget in USD
 	Effort      string // Codex: reasoning effort level

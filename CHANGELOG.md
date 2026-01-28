@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.3] - 2026-01-28
+
+### Added
+- **Recursive directory scanning** - New `-r/--recursive` flag discovers and runs tasks across all git repositories within a directory. Use `--levels N` to control scan depth (default: 1, max: 10). Skips hidden directories and common non-project folders (node_modules, vendor, __pycache__).
+  ```bash
+  # Run audit in each git repo found in ~/Desktop/_code
+  rclaude -r -d ~/Desktop/_code audit
+
+  # Scan two levels deep for nested repos
+  rclaude -r --levels 2 -d ~/code audit
+  ```
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.9.2] - 2026-01-22
 
 ### Fixed

@@ -113,6 +113,8 @@ func CommonFlagGroups() []FlagAliases {
 		{Names: []string{"-l", "--lock"}, TakesArg: false},
 		{Names: []string{"-D", "--delete-old"}, TakesArg: false},
 		{Names: []string{"-R", "--require-review"}, TakesArg: false},
+		{Names: []string{"-r", "--recursive"}, TakesArg: false},
+		{Names: []string{"--levels"}, TakesArg: true},
 	}
 }
 
