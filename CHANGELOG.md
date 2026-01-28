@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.5] - 2026-01-28
+
+### Added
+- **`--list` flag** - Specify comma-separated subdirectory names to process in order. Combines with `-d` or `-c` to select a subset of named subdirectories without listing full paths.
+  ```bash
+  # Process only solstice and airborne subdirectories
+  rclaude -d ~/Desktop/_code --list solstice,airborne audit
+
+  # Works with -c flag too
+  rclaude -c mycode --list proj1,proj2 audit
+  ```
+- Mutually exclusive with `--recursive` (they serve opposite purposes)
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.9.4] - 2026-01-28
 
 ### Fixed

@@ -43,8 +43,9 @@ type Config struct {
 	Vars          map[string]string // User-defined variables from -x flags
 
 	// Recursive directory scanning
-	Recursive     bool // Enable recursive directory scanning (-r)
-	RecurseLevels int  // Depth of scan (--levels, default 1)
+	Recursive     bool   // Enable recursive directory scanning (-r)
+	RecurseLevels int    // Depth of scan (--levels, default 1)
+	DirList       string // Comma-separated subdirectory names (--list)
 
 	// Tool-specific fields (only some tools use these)
 	MaxBudget   string // Claude: max budget in USD

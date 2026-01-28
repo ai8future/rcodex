@@ -778,6 +778,7 @@ func (r *Runner) parseArgs() (*Config, error) {
 	flag.BoolVar(&cfg.Recursive, "r", false, "Recursively scan subdirectories for git repos")
 	flag.BoolVar(&cfg.Recursive, "recursive", false, "Recursively scan subdirectories for git repos")
 	flag.IntVar(&cfg.RecurseLevels, "levels", 1, "Depth of recursive directory scan")
+	flag.StringVar(&cfg.DirList, "list", "", "Comma-separated subdirectory names to process")
 
 	// Define tool-specific flags
 	r.defineToolSpecificFlags(cfg)
@@ -840,6 +841,49 @@ func (r *Runner) parseArgs() (*Config, error) {
 	// Set working directories (supports comma-separated list)
 	if err := r.setWorkingDirectories(cfg, codePath, dirPath); err != nil {
 		return nil, err
+	}
+
+	// Check mutual exclusivity of --list and --recursive
+	if cfg.DirList != "" && cfg.Recursive {
+		return nil, fmt.Errorf("--list and --recursive cannot be used together")
+	}
+
+	// Handle --list: filter to specific subdirectories in specified order
+	if cfg.DirList != "" {
+		// Determine base directory
+		baseDir := ""
+		if len(cfg.WorkDirs) == 1 {
+			baseDir = cfg.WorkDirs[0]
+		} else if len(cfg.WorkDirs) == 0 {
+			// Use current working directory as base
+			cwd, err := os.Getwd()
+			if err != nil {
+				return nil, fmt.Errorf("--list: could not determine current directory: %v", err)
+			}
+			baseDir = cwd
+		} else {
+			return nil, fmt.Errorf("--list requires exactly one base directory via -d or -c")
+		}
+
+		names := strings.Split(cfg.DirList, ",")
+		var filtered []string
+		for _, name := range names {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			dirPath := filepath.Join(baseDir, name)
+			if info, err := os.Stat(dirPath); err == nil && info.IsDir() {
+				filtered = append(filtered, dirPath)
+			} else {
+				return nil, fmt.Errorf("directory not found: %s", dirPath)
+			}
+		}
+		if len(filtered) == 0 {
+			return nil, fmt.Errorf("--list: no valid directories found")
+		}
+		cfg.WorkDirs = filtered
+		cfg.Codebase = filepath.Base(filtered[0])
 	}
 
 	// Handle recursive directory scanning
@@ -1049,6 +1093,8 @@ func (r *Runner) printUsage() {
 	fmt.Printf("                        %s(comma-separated for multiple: -c proj1,proj2)%s\n", Dim, Reset)
 	fmt.Printf("  %s-d%s, %s--dir%s %s<path>%s      Set working directory to absolute path\n", Green, Reset, Green, Reset, Yellow, Reset)
 	fmt.Printf("                        %s(comma-separated for multiple: -d /a,/b)%s\n", Dim, Reset)
+	fmt.Printf("  %s--list%s %s<names>%s       Subdirectory names to process in order\n", Green, Reset, Yellow, Reset)
+	fmt.Printf("                        %s(comma-separated: --list proj1,proj2)%s\n", Dim, Reset)
 	fmt.Printf("  %s-o%s, %s--output%s %s<path>%s   Output directory for reports %s(replaces _rcodegen)%s\n", Green, Reset, Green, Reset, Yellow, Reset, Dim, Reset)
 	fmt.Printf("  %s-r%s, %s--recursive%s       Scan for git repos and run in each\n", Green, Reset, Green, Reset)
 	fmt.Printf("  %s--levels%s %s<N>%s         Depth of recursive scan %s(default: 1)%s\n\n", Green, Reset, Yellow, Reset, Dim, Reset)

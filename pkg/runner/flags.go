@@ -115,6 +115,7 @@ func CommonFlagGroups() []FlagAliases {
 		{Names: []string{"-R", "--require-review"}, TakesArg: false},
 		{Names: []string{"-r", "--recursive"}, TakesArg: false},
 		{Names: []string{"--levels"}, TakesArg: true},
+		{Names: []string{"--list"}, TakesArg: true},
 	}
 }
 
