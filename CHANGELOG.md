@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.6] - 2026-02-04
+
+### Added
+- **chassis-go integration** - Adopted `github.com/ai8future/chassis-go` for structured logging, config, and test utilities.
+- **Structured logging** - New `logz`-based `*slog.Logger` wired through runner and stream parser. Logs chassis version at startup, lock acquisition, command execution, and unknown stream events.
+- **`-v`/`--verbose` flag** - Enables debug-level logging to stderr on all tools (rclaude, rgemini, rcodex, rcodegen).
+- **Environment variable config overrides** - `RCODEGEN_CODE_DIR`, `RCODEGEN_OUTPUT_DIR`, `RCODEGEN_MODEL`, `RCODEGEN_BUDGET`, `RCODEGEN_EFFORT`, `RCODEGEN_LOG_LEVEL` override settings.json values. Uses `config.MustLoad` for struct-tag-driven env binding.
+- **Graceful signal handling** - Ctrl+C now cleanly stops multi-codebase runs, suite runs, and orchestrator step loops via `signal.NotifyContext`, skipping remaining work instead of hard-exiting.
+- **testkit adoption** - Settings tests use `testkit.SetEnv` for automatic cleanup of environment variable mutations.
+
+### Agent
+- Claude:Opus 4.5
+
 ## [1.9.5] - 2026-01-28
 
 ### Added

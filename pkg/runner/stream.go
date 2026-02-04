@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 )
@@ -62,13 +63,18 @@ type StreamParser struct {
 	initialized  bool
 	Usage        *TokenUsage // Captured from result event
 	TotalCostUSD float64     // Captured from result event
+	logger       *slog.Logger // Structured logger for diagnostics
 }
 
 // NewStreamParser creates a new stream parser
-func NewStreamParser(w io.Writer) *StreamParser {
-	return &StreamParser{
+func NewStreamParser(w io.Writer, logger ...*slog.Logger) *StreamParser {
+	p := &StreamParser{
 		writer: w,
 	}
+	if len(logger) > 0 && logger[0] != nil {
+		p.logger = logger[0]
+	}
+	return p
 }
 
 // ProcessLine processes a single JSON line from stream output
@@ -96,7 +102,9 @@ func (p *StreamParser) ProcessLine(line string) {
 	case "result":
 		p.handleResult(event)
 	default:
-		// Unknown type, skip
+		if p.logger != nil {
+			p.logger.Debug("unknown stream event type", "type", event.Type)
+		}
 	}
 }
 

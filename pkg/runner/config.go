@@ -1,6 +1,10 @@
 package runner
 
-import "rcodegen/pkg/colors"
+import (
+	"log/slog"
+
+	"rcodegen/pkg/colors"
+)
 
 // Re-export color constants from colors package for backwards compatibility.
 // New code should import rcodegen/pkg/colors directly.
@@ -54,6 +58,10 @@ type Config struct {
 	NoTrackStatus bool // User explicitly disabled status tracking via -S flag
 	SessionID   string // Session ID for resuming previous session
 	Flash       bool   // Gemini: use flash model variant
+
+	// Logging
+	Verbose bool        // Enable verbose/debug logging
+	Logger  *slog.Logger // Structured logger (nil-safe: callers should check before use)
 
 	// Execution control
 	DryRun bool // If true, show what would be executed without running

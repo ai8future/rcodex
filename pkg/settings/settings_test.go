@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/ai8future/chassis-go/testkit"
 )
 
 func TestSettingsFilePermissions(t *testing.T) {
@@ -47,5 +49,94 @@ func TestExpandTilde(t *testing.T) {
 				t.Errorf("expandTilde(%q) = %q, want %q", tt.input, result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestApplyEnvOverrides_CodeDir(t *testing.T) {
+	testkit.SetEnv(t, map[string]string{
+		"RCODEGEN_CODE_DIR": "/tmp/test-code",
+	})
+
+	s := GetDefaultSettings()
+	applyEnvOverrides(s)
+
+	if s.CodeDir != "/tmp/test-code" {
+		t.Errorf("CodeDir = %q, want %q", s.CodeDir, "/tmp/test-code")
+	}
+}
+
+func TestApplyEnvOverrides_Budget(t *testing.T) {
+	testkit.SetEnv(t, map[string]string{
+		"RCODEGEN_BUDGET": "$25.00",
+	})
+
+	s := GetDefaultSettings()
+	applyEnvOverrides(s)
+
+	if s.Defaults.Claude.Budget != "25.00" {
+		t.Errorf("Claude.Budget = %q, want %q", s.Defaults.Claude.Budget, "25.00")
+	}
+}
+
+func TestApplyEnvOverrides_Model(t *testing.T) {
+	testkit.SetEnv(t, map[string]string{
+		"RCODEGEN_MODEL": "opus",
+	})
+
+	s := GetDefaultSettings()
+	applyEnvOverrides(s)
+
+	if s.Defaults.Claude.Model != "opus" {
+		t.Errorf("Claude.Model = %q, want %q", s.Defaults.Claude.Model, "opus")
+	}
+	if s.Defaults.Codex.Model != "opus" {
+		t.Errorf("Codex.Model = %q, want %q", s.Defaults.Codex.Model, "opus")
+	}
+	if s.Defaults.Gemini.Model != "opus" {
+		t.Errorf("Gemini.Model = %q, want %q", s.Defaults.Gemini.Model, "opus")
+	}
+}
+
+func TestApplyEnvOverrides_Effort(t *testing.T) {
+	testkit.SetEnv(t, map[string]string{
+		"RCODEGEN_EFFORT": "low",
+	})
+
+	s := GetDefaultSettings()
+	applyEnvOverrides(s)
+
+	if s.Defaults.Codex.Effort != "low" {
+		t.Errorf("Codex.Effort = %q, want %q", s.Defaults.Codex.Effort, "low")
+	}
+}
+
+func TestApplyEnvOverrides_NoEnvVarsSet(t *testing.T) {
+	// Ensure none of the RCODEGEN_* vars are set
+	testkit.SetEnv(t, map[string]string{
+		"RCODEGEN_CODE_DIR":   "",
+		"RCODEGEN_OUTPUT_DIR": "",
+		"RCODEGEN_MODEL":      "",
+		"RCODEGEN_BUDGET":     "",
+		"RCODEGEN_EFFORT":     "",
+		"RCODEGEN_LOG_LEVEL":  "",
+	})
+
+	s := GetDefaultSettings()
+	originalBudget := s.Defaults.Claude.Budget
+	applyEnvOverrides(s)
+
+	// Nothing should have changed
+	if s.Defaults.Claude.Budget != originalBudget {
+		t.Errorf("Budget changed from %q to %q without env var", originalBudget, s.Defaults.Claude.Budget)
+	}
+}
+
+func TestGetEnvLogLevel(t *testing.T) {
+	testkit.SetEnv(t, map[string]string{
+		"RCODEGEN_LOG_LEVEL": "debug",
+	})
+
+	if level := GetEnvLogLevel(); level != "debug" {
+		t.Errorf("GetEnvLogLevel() = %q, want %q", level, "debug")
 	}
 }

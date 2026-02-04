@@ -3,9 +3,11 @@
 package orchestrator
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -123,6 +125,10 @@ func (o *Orchestrator) getStepModel(toolName, stepModel string) string {
 func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelope.Envelope, error) {
 	start := time.Now()
 
+	// Set up signal-aware context for graceful cancellation (Ctrl+C)
+	sigCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	// Validate required inputs and apply defaults
 	for _, input := range b.Inputs {
 		if _, ok := inputs[input.Name]; !ok {
@@ -199,6 +205,16 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 
 	// Execute steps
 	for i, step := range b.Steps {
+		// Check for cancellation (e.g., Ctrl+C) before starting each step
+		if sigCtx.Err() != nil {
+			fmt.Fprintf(os.Stderr, "\n%sInterrupted — skipping remaining steps%s\n", colorYellow, colorReset)
+			return envelope.New().
+				Failure("INTERRUPTED", "execution cancelled by signal").
+				WithResult("steps_completed", i).
+				WithResult("total_cost_usd", totalCost).
+				Build(), sigCtx.Err()
+		}
+
 		stepStart := time.Now()
 		display.SetStepRunning(i)
 		// Set model immediately so it shows while running

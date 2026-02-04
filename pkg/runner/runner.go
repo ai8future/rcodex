@@ -3,10 +3,12 @@
 package runner
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -15,6 +17,9 @@ import (
 	"rcodegen/pkg/lock"
 	"rcodegen/pkg/reports"
 	"rcodegen/pkg/settings"
+
+	chassis "github.com/ai8future/chassis-go"
+	"github.com/ai8future/chassis-go/logz"
 )
 
 // noTrackStatus is a package-level variable used by defineToolSpecificFlags
@@ -92,6 +97,18 @@ func (r *Runner) Run() *RunResult {
 		return &RunResult{ExitCode: 0}
 	}
 
+	// Initialize structured logger
+	// Priority: --verbose flag > RCODEGEN_LOG_LEVEL env var > default "warn"
+	logLevel := "warn"
+	if envLevel := settings.GetEnvLogLevel(); envLevel != "" {
+		logLevel = envLevel
+	}
+	if cfg.Verbose {
+		logLevel = "debug"
+	}
+	cfg.Logger = logz.New(logLevel)
+	cfg.Logger.Debug("starting", "tool", r.Tool.Name(), "chassis_version", chassis.Version)
+
 	// Substitute {report_dir} in all task prompts
 	// Use custom output dir if specified, otherwise use unified _rcodegen directory
 	reportDir := r.Tool.ReportDir()
@@ -164,13 +181,19 @@ func (r *Runner) Run() *RunResult {
 		if len(cfg.WorkDirs) == 1 {
 			identifier = lock.GetIdentifier(cfg.WorkDirs[0])
 		}
+		cfg.Logger.Debug("acquiring lock", "identifier", identifier)
 		var err error
 		lockHandle, err = lock.Acquire(identifier, true)
 		if err != nil {
 			return runError(1, err)
 		}
 		defer lockHandle.Release()
+		cfg.Logger.Debug("lock acquired", "identifier", identifier)
 	}
+
+	// Set up signal-aware context for graceful cancellation
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
 
 	// Record overall start time
 	overallStart := time.Now()
@@ -190,6 +213,14 @@ func (r *Runner) Run() *RunResult {
 	}
 
 	for i, workDir := range workDirs {
+		// Check for cancellation before starting next codebase
+		if ctx.Err() != nil {
+			cfg.Logger.Info("interrupted, skipping remaining codebases", "completed", i, "total", len(workDirs))
+			fmt.Fprintf(os.Stderr, "\n%sInterrupted — skipping remaining codebases%s\n", Yellow, Reset)
+			overallExit = 1
+			break
+		}
+
 		// Show header for multiple codebases
 		if len(cfg.WorkDirs) > 1 {
 			PrintCodebaseHeader(i+1, len(cfg.WorkDirs), workDir)
@@ -245,6 +276,7 @@ func (r *Runner) Run() *RunResult {
 // runForWorkDir runs the task for a single working directory
 func (r *Runner) runForWorkDir(cfg *Config, workDir string) int {
 	startTime := time.Now()
+	cfg.Logger.Debug("running task", "work_dir", workDir, "task_shortcut", cfg.TaskShortcut)
 
 	// For multi-codebase runs, regenerate task with correct codebase name
 	// This ensures each codebase gets its own report filename
@@ -402,6 +434,7 @@ func (r *Runner) runSingleTask(cfg *Config, workDir string) int {
 // executeCommand builds and runs the tool command
 func (r *Runner) executeCommand(cfg *Config, workDir, task string) int {
 	cmd := r.Tool.BuildCommand(cfg, workDir, task)
+	cfg.Logger.Debug("executing command", "binary", cmd.Path, "dir", cmd.Dir, "args_count", len(cmd.Args))
 
 	// If tool uses stream output (like Claude's stream-json) and not in JSON mode,
 	// parse and format the output nicely
@@ -441,7 +474,7 @@ func (r *Runner) executeWithStreamParser(cfg *Config, cmd *exec.Cmd) int {
 	}
 
 	// Parse and format the output
-	parser := NewStreamParser(os.Stdout)
+	parser := NewStreamParser(os.Stdout, cfg.Logger)
 	if err := parser.ProcessReader(stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "%sWarning:%s Stream parsing error: %v\n", Yellow, Reset, err)
 	}
@@ -470,8 +503,19 @@ func (r *Runner) runMultipleReports(cfg *Config, workDir string) int {
 
 	fmt.Printf("%s%sRunning all %d report types sequentially...%s\n\n", Bold, Cyan, len(ReportTypes), Reset)
 
+	// Set up signal-aware context for suite cancellation
+	suiteCtx, suiteStop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer suiteStop()
+
 	// Run each report type
 	for _, reportType := range ReportTypes {
+		// Check for cancellation between reports
+		if suiteCtx.Err() != nil {
+			cfg.Logger.Info("interrupted, skipping remaining report types")
+			fmt.Fprintf(os.Stderr, "\n%sInterrupted — skipping remaining reports%s\n", Yellow, Reset)
+			break
+		}
+
 		PrintReportHeader(reportType)
 
 		// Check if we should skip this report type
@@ -595,7 +639,7 @@ func discoverDirectories(root string, maxLevels int) ([]string, error) {
 		// Check if this is a git repository
 		gitDir := filepath.Join(fullPath, ".git")
 		if _, err := os.Stat(gitDir); err == nil {
-			// Found a git repo - add it
+			// Found a git repo
 			dirs = append(dirs, fullPath)
 		} else if maxLevels > 1 {
 			// Not a git repo but can go deeper
@@ -773,6 +817,8 @@ func (r *Runner) parseArgs() (*Config, error) {
 	flag.BoolVar(&showTasks, "tasks", false, "List available task shortcuts")
 	flag.BoolVar(&showHelp, "h", false, "Show help message")
 	flag.BoolVar(&showHelp, "help", false, "Show help message")
+	flag.BoolVar(&cfg.Verbose, "v", false, "Enable verbose/debug logging")
+	flag.BoolVar(&cfg.Verbose, "verbose", false, "Enable verbose/debug logging")
 	flag.BoolVar(&migrateGrades, "migrate-grades", false, "Migrate existing reports to .grades.json")
 	flag.BoolVar(&migrateGradesAll, "migrate-grades-all", false, "Migrate grades for all repos in code directory")
 	flag.BoolVar(&cfg.Recursive, "r", false, "Recursively scan subdirectories for git repos")
@@ -1130,6 +1176,7 @@ func (r *Runner) printUsage() {
 	fmt.Printf("%s%sOther Options:%s\n", Bold, Cyan, Reset)
 	fmt.Printf("  %s--status-only%s         Show status and exit\n", Green, Reset)
 	fmt.Printf("  %s-t%s, %s--tasks%s           List available task shortcuts\n", Green, Reset, Green, Reset)
+	fmt.Printf("  %s-v%s, %s--verbose%s         Enable debug logging to stderr\n", Green, Reset, Green, Reset)
 	fmt.Printf("  %s-h%s, %s--help%s            Show this help message\n\n", Green, Reset, Green, Reset)
 
 	// Configuration

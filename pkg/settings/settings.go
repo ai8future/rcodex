@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/ai8future/chassis-go/config"
 )
 
 const (
@@ -52,6 +54,47 @@ type Settings struct {
 	DefaultBuildDir string             `json:"default_build_dir,omitempty"` // Default output directory for build bundles
 	Defaults        Defaults           `json:"defaults"`                    // Default settings for each tool
 	Tasks           map[string]TaskDef `json:"tasks"`                       // Task shortcuts
+}
+
+// EnvOverrides allows environment variables to override settings.json values.
+// All fields are optional (required:"false") — only non-empty values apply.
+// Merge order: defaults < settings.json < env vars < CLI flags.
+type EnvOverrides struct {
+	CodeDir   string `env:"RCODEGEN_CODE_DIR" required:"false"`
+	OutputDir string `env:"RCODEGEN_OUTPUT_DIR" required:"false"`
+	Model     string `env:"RCODEGEN_MODEL" required:"false"`
+	Budget    string `env:"RCODEGEN_BUDGET" required:"false"`
+	Effort    string `env:"RCODEGEN_EFFORT" required:"false"`
+	LogLevel  string `env:"RCODEGEN_LOG_LEVEL" required:"false"`
+}
+
+// applyEnvOverrides loads environment variable overrides and merges them into settings.
+func applyEnvOverrides(s *Settings) {
+	env := config.MustLoad[EnvOverrides]()
+
+	if env.CodeDir != "" {
+		s.CodeDir = expandTilde(env.CodeDir)
+	}
+	if env.OutputDir != "" {
+		s.OutputDir = expandTilde(env.OutputDir)
+	}
+	if env.Model != "" {
+		// Apply to all tools — CLI flags can override per-tool
+		s.Defaults.Claude.Model = env.Model
+		s.Defaults.Codex.Model = env.Model
+		s.Defaults.Gemini.Model = env.Model
+	}
+	if env.Budget != "" {
+		s.Defaults.Claude.Budget = strings.TrimPrefix(env.Budget, "$")
+	}
+	if env.Effort != "" {
+		s.Defaults.Codex.Effort = env.Effort
+	}
+}
+
+// GetEnvLogLevel returns the RCODEGEN_LOG_LEVEL env var value, or empty string if unset.
+func GetEnvLogLevel() string {
+	return os.Getenv("RCODEGEN_LOG_LEVEL")
 }
 
 // TaskConfig is the legacy format used by the rest of the codebase
@@ -190,6 +233,9 @@ func LoadWithFallback() (*Settings, bool) {
 	if settings.DefaultBuildDir == "" {
 		settings.DefaultBuildDir = settings.CodeDir // Default to code_dir if not set
 	}
+	// Apply environment variable overrides (RCODEGEN_* vars override settings.json)
+	applyEnvOverrides(settings)
+
 	// Check for reserved task name overrides before merging
 	if err := ValidateNoReservedTaskOverrides(settings.Tasks); err != nil {
 		fmt.Fprintf(os.Stderr, "%sError:%s %v\n", yellow, reset, err)
@@ -606,6 +652,9 @@ func RunInteractiveSetup() (*Settings, bool) {
 func LoadOrSetup() (*Settings, bool) {
 	settings, err := Load()
 	if err == nil {
+		// Apply environment variable overrides (RCODEGEN_* vars override settings.json)
+		applyEnvOverrides(settings)
+
 		// Check for reserved task name overrides before merging
 		if err := ValidateNoReservedTaskOverrides(settings.Tasks); err != nil {
 			fmt.Fprintf(os.Stderr, "%sError:%s %v\n", yellow, reset, err)
