@@ -174,7 +174,7 @@ func extractCostInfo(toolName, stdout, stderr string) UsageInfo {
 			// Codex doesn't break down input/output, estimate 70% input, 30% output
 			usage.InputTokens = tokens * 7 / 10
 			usage.OutputTokens = tokens * 3 / 10
-			// Estimate cost: GPT-5.2 Codex pricing
+			// Estimate cost: GPT-5.3 Codex pricing
 			// Input: $0.01/1K, Output: $0.03/1K (rough estimates)
 			usage.CostUSD = float64(usage.InputTokens)*0.00001 + float64(usage.OutputTokens)*0.00003
 		}

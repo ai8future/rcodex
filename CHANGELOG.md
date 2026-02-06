@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.3] - 2026-02-06
+
+### Fixed
+- **Stale gpt-5.2-codex references in docs** - Updated README.md, settings.json.example, and executor comment to use gpt-5.3-codex as the default model, matching the actual code default set in v1.9.7.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.2] - 2026-02-06
 
 ### Changed

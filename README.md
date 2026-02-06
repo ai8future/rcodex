@@ -55,7 +55,7 @@ rcodex -c myproject audit
 rcodex -c myproject all
 
 # Run with custom settings
-rcodex -c myproject -m gpt-5.2-codex -e xhigh test
+rcodex -c myproject -m gpt-5.3-codex -e xhigh test
 
 # Delete old reports after completion
 rcodex -c myproject -D audit
@@ -141,7 +141,7 @@ Example `settings.json`:
   "code_dir": "~/code",
   "defaults": {
     "codex": {
-      "model": "gpt-5.2-codex",
+      "model": "gpt-5.3-codex",
       "effort": "xhigh"
     },
     "claude": {
@@ -168,7 +168,7 @@ If no settings file exists, both tools run an interactive setup wizard that help
 
 ```
 -e, --effort <lvl>   Reasoning effort: low, medium, high, xhigh (default: xhigh)
--m, --model <name>   Model name (default: gpt-5.2-codex)
+-m, --model <name>   Model name (default: gpt-5.3-codex)
 -s, --status         Track credit usage (default: on)
 -S, --no-status      Disable credit usage tracking
     --status-only    Show credit status and exit
@@ -270,7 +270,7 @@ Bundles are JSON workflow definitions stored in `~/.rcodegen/bundles/` or built-
 | **Cost Tracking** | iTerm2 API | iTerm2 API | Not yet |
 | **Report Prefix** | `claude-` | `codex-` | `gemini-` |
 | **Budget Control** | `--max-budget-usd` | None | None |
-| **Default Model** | sonnet | gpt-5.2-codex | gemini-3 |
+| **Default Model** | sonnet | gpt-5.3-codex | gemini-3 |
 
 ## Report Management
 
