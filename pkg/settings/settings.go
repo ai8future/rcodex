@@ -25,7 +25,7 @@ type TaskDef struct {
 
 // CodexDefaults holds default settings for rcodex
 type CodexDefaults struct {
-	Model  string `json:"model"`  // Default model (e.g., "gpt-5.2-codex")
+	Model  string `json:"model"`  // Default model (e.g., "gpt-5.3-codex")
 	Effort string `json:"effort"` // Default effort level (low, medium, high, xhigh)
 }
 
@@ -192,7 +192,7 @@ func GetDefaultSettings() *Settings {
 		DefaultBuildDir: "", // Optional, will use CodeDir if not set
 		Defaults: Defaults{
 			Codex: CodexDefaults{
-				Model:  "gpt-5.2-codex",
+				Model:  "gpt-5.3-codex",
 				Effort: "xhigh",
 			},
 			Claude: ClaudeDefaults{
@@ -216,7 +216,7 @@ func LoadWithFallback() (*Settings, bool) {
 	}
 	// Fill in any missing defaults
 	if settings.Defaults.Codex.Model == "" {
-		settings.Defaults.Codex.Model = "gpt-5.2-codex"
+		settings.Defaults.Codex.Model = "gpt-5.3-codex"
 	}
 	if settings.Defaults.Codex.Effort == "" {
 		settings.Defaults.Codex.Effort = "xhigh"
@@ -553,11 +553,11 @@ func RunInteractiveSetup() (*Settings, bool) {
 
 	fmt.Printf("%s%sDefault model for rcodex?%s\n", bold, green, reset)
 	fmt.Printf("%sThe model name used with OpenAI Codex CLI.%s\n\n", dim, reset)
-	fmt.Printf("%sCodex model%s [%sgpt-5.2-codex%s]: ", bold, reset, yellow, reset)
+	fmt.Printf("%sCodex model%s [%sgpt-5.3-codex%s]: ", bold, reset, yellow, reset)
 
 	codexModelInput, _ := reader.ReadString('\n')
 	codexModelInput = strings.TrimSpace(codexModelInput)
-	codexModel := "gpt-5.2-codex"
+	codexModel := "gpt-5.3-codex"
 	if codexModelInput != "" {
 		codexModel = codexModelInput
 	}

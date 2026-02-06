@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.7] - 2026-02-06
+
+### Changed
+- **Default rcodex model updated to gpt-5.3-codex** - Updated default model from gpt-5.2-codex to gpt-5.3-codex across codex tool, settings defaults, and setup wizard. gpt-5.2-codex remains available as a valid model.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [1.9.6] - 2026-02-04
 
 ### Added
