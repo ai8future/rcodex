@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2026-02-06
+
+### Changed
+- **Standardized binary location to `bin/`** - Removed root-level binaries; all compiled binaries now live exclusively in `bin/`. Updated `.gitignore` accordingly.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.1] - 2026-02-06
 
 ### Added
