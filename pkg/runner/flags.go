@@ -117,6 +117,7 @@ func CommonFlagGroups() []FlagAliases {
 		{Names: []string{"--levels"}, TakesArg: true},
 		{Names: []string{"--list"}, TakesArg: true},
 		{Names: []string{"-v", "--verbose"}, TakesArg: false},
+		{Names: []string{"-V", "--version"}, TakesArg: false},
 	}
 }
 
@@ -133,7 +134,7 @@ func reorderArgsForFlagParsing(args []string, flagGroups []FlagAliases) []string
 		}
 	}
 	// Add common flags that might not be in flagGroups
-	commonFlags := []string{"-h", "--help", "-t", "--tasks", "-n", "--dry-run", "-o", "--output"}
+	commonFlags := []string{"-h", "--help", "-t", "--tasks", "-n", "--dry-run", "-o", "--output", "-V", "--version"}
 	for _, f := range commonFlags {
 		knownFlags[f] = true
 	}

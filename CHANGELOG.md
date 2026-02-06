@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2026-02-06
+
+### Added
+- **`--version` / `-V` flag** - All CLI tools (rcodex, rclaude, rgemini, rcodegen) now support `--version` and `-V` to print the version. Version is baked in at build time via ldflags, with a runtime fallback to reading the VERSION file.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.0] - 2026-02-06
 
 ### Changed

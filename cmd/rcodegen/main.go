@@ -10,6 +10,7 @@ import (
 	"rcodegen/pkg/bundle"
 	_ "rcodegen/pkg/executor" // Register dispatcher factory via init()
 	"rcodegen/pkg/orchestrator"
+	"rcodegen/pkg/runner"
 	"rcodegen/pkg/settings"
 )
 
@@ -26,6 +27,8 @@ func main() {
 		listBundles()
 	case "help", "-h", "--help":
 		printUsage()
+	case "version", "-V", "--version":
+		fmt.Printf("rcodegen %s\n", runner.GetVersion())
 	default:
 		// Treat as bundle name shortcut
 		os.Args = append([]string{os.Args[0], "bundle"}, os.Args[1:]...)

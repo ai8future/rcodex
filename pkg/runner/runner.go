@@ -22,6 +22,30 @@ import (
 	"github.com/ai8future/chassis-go/logz"
 )
 
+// Version is set at build time via ldflags:
+//
+//	go build -ldflags "-X rcodegen/pkg/runner.Version=$(cat VERSION)" ./cmd/rcodex
+//
+// If not set, GetVersion() falls back to reading the VERSION file at runtime.
+var Version string
+
+// GetVersion returns the application version.
+// Prefers the build-time value; falls back to reading the VERSION file.
+func GetVersion() string {
+	if Version != "" {
+		return Version
+	}
+	for _, path := range []string{"VERSION", "../VERSION", "../../VERSION"} {
+		if data, err := os.ReadFile(path); err == nil {
+			v := strings.TrimSpace(string(data))
+			if v != "" {
+				return v
+			}
+		}
+	}
+	return "unknown"
+}
+
 // noTrackStatus is a package-level variable used by defineToolSpecificFlags
 // to capture the --no-status flag value, which is then applied after flag.Parse()
 var noTrackStatus bool
@@ -790,7 +814,7 @@ func (r *Runner) parseArgs() (*Config, error) {
 
 	// Define common flags
 	var codePath, dirPath string
-	var showTasks, showHelp, migrateGrades, migrateGradesAll bool
+	var showTasks, showHelp, showVersion, migrateGrades, migrateGradesAll bool
 
 	flag.StringVar(&codePath, "c", "", "Project path relative to configured code directory")
 	flag.StringVar(&codePath, "code", "", "Project path relative to configured code directory")
@@ -817,6 +841,8 @@ func (r *Runner) parseArgs() (*Config, error) {
 	flag.BoolVar(&showTasks, "tasks", false, "List available task shortcuts")
 	flag.BoolVar(&showHelp, "h", false, "Show help message")
 	flag.BoolVar(&showHelp, "help", false, "Show help message")
+	flag.BoolVar(&showVersion, "V", false, "Show version")
+	flag.BoolVar(&showVersion, "version", false, "Show version")
 	flag.BoolVar(&cfg.Verbose, "v", false, "Enable verbose/debug logging")
 	flag.BoolVar(&cfg.Verbose, "verbose", false, "Enable verbose/debug logging")
 	flag.BoolVar(&migrateGrades, "migrate-grades", false, "Migrate existing reports to .grades.json")
@@ -839,6 +865,11 @@ func (r *Runner) parseArgs() (*Config, error) {
 	}
 
 	// Handle special flags - return nil config to signal exit 0
+	if showVersion {
+		fmt.Printf("%s %s\n", r.Tool.Name(), GetVersion())
+		return nil, nil
+	}
+
 	if showHelp {
 		r.printUsage()
 		return nil, nil
@@ -1177,6 +1208,7 @@ func (r *Runner) printUsage() {
 	fmt.Printf("  %s--status-only%s         Show status and exit\n", Green, Reset)
 	fmt.Printf("  %s-t%s, %s--tasks%s           List available task shortcuts\n", Green, Reset, Green, Reset)
 	fmt.Printf("  %s-v%s, %s--verbose%s         Enable debug logging to stderr\n", Green, Reset, Green, Reset)
+	fmt.Printf("  %s-V%s, %s--version%s         Show version\n", Green, Reset, Green, Reset)
 	fmt.Printf("  %s-h%s, %s--help%s            Show this help message\n\n", Green, Reset, Green, Reset)
 
 	// Configuration
