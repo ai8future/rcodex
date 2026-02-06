@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2026-02-06
+
+### Changed
+- **Version bump to 2.0.0**
+
+### Agent
+- Claude:Opus 4.6
+
 ## [1.9.7] - 2026-02-06
 
 ### Changed
