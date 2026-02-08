@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.4] - 2026-02-08
+
+### Changed
+- **Upgraded chassis-go from v1.0.3 to v1.4.0** — Bumped `github.com/ai8future/chassis-go` dependency to v1.4.0 (embedded VERSION 4.0.0). Added `chassis.RequireMajor(4)` to all four entry points (rclaude, rcodex, rgemini, rcodegen). Added `TestMain` to settings tests for chassis initialization. Updated `VERSION.chassis` to v1.4.0.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.3] - 2026-02-06
 
 ### Fixed

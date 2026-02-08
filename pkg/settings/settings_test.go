@@ -5,8 +5,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	chassis "github.com/ai8future/chassis-go"
 	"github.com/ai8future/chassis-go/testkit"
 )
+
+func TestMain(m *testing.M) {
+	chassis.RequireMajor(4)
+	os.Exit(m.Run())
+}
 
 func TestSettingsFilePermissions(t *testing.T) {
 	// This test verifies settings are written with 0600 permissions
