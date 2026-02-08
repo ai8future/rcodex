@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.5] - 2026-02-08
+
+### Changed
+- **Upgraded chassis-go from v1.4.0 (major 4) to v5.0.0 (major 5)** — Updated Go module path from `github.com/ai8future/chassis-go` to `github.com/ai8future/chassis-go/v5` per Go module versioning conventions. Updated all import paths across 7 files (9 locations), bumped `chassis.RequireMajor(4)` to `chassis.RequireMajor(5)` in all 5 entry points, and updated `VERSION.chassis` to 5.0.0.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.4] - 2026-02-08
 
 ### Changed

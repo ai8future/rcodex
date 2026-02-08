@@ -13,11 +13,11 @@ import (
 	"rcodegen/pkg/runner"
 	"rcodegen/pkg/settings"
 
-	chassis "github.com/ai8future/chassis-go"
+	chassis "github.com/ai8future/chassis-go/v5"
 )
 
 func main() {
-	chassis.RequireMajor(4)
+	chassis.RequireMajor(5)
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(1)
