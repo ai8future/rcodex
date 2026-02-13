@@ -222,7 +222,7 @@ func LoadWithFallback() (*Settings, bool) {
 		settings.Defaults.Codex.Effort = "xhigh"
 	}
 	if settings.Defaults.Claude.Model == "" {
-		settings.Defaults.Claude.Model = "sonnet"
+		settings.Defaults.Claude.Model = "opus"
 	}
 	if settings.Defaults.Claude.Budget == "" {
 		settings.Defaults.Claude.Budget = "10.00"
@@ -508,22 +508,21 @@ func RunInteractiveSetup() (*Settings, bool) {
 	fmt.Printf("\n%s%s── rclaude (Claude Code) Defaults ──%s\n\n", bold, cyan, reset)
 
 	fmt.Printf("%s%sDefault model for rclaude?%s\n", bold, green, reset)
-	fmt.Printf("%sTip: Sonnet is recommended to maximize your included API credits.%s\n", dim, reset)
-	fmt.Printf("%sOpus is more capable but costs more. Haiku is faster but less capable.%s\n\n", dim, reset)
-	fmt.Printf("  %s1.%s %ssonnet%s %s(recommended - best value)%s\n", dim, reset, magenta, reset, dim, reset)
-	fmt.Printf("  %s2.%s %sopus%s %s(most capable)%s\n", dim, reset, magenta, reset, dim, reset)
+	fmt.Printf("%sOpus is the most capable. Sonnet balances cost and capability. Haiku is fastest.%s\n\n", dim, reset)
+	fmt.Printf("  %s1.%s %sopus%s %s(recommended - most capable)%s\n", dim, reset, magenta, reset, dim, reset)
+	fmt.Printf("  %s2.%s %ssonnet%s %s(balanced)%s\n", dim, reset, magenta, reset, dim, reset)
 	fmt.Printf("  %s3.%s %shaiku%s %s(fastest, least capable)%s\n\n", dim, reset, magenta, reset, dim, reset)
 
 	fmt.Printf("%sClaude model%s [%s1%s]: ", bold, reset, yellow, reset)
 	claudeModelInput, _ := reader.ReadString('\n')
 	claudeModelInput = strings.TrimSpace(claudeModelInput)
 
-	claudeModel := "sonnet" // default
+	claudeModel := "opus" // default
 	switch claudeModelInput {
-	case "", "1", "sonnet":
-		claudeModel = "sonnet"
-	case "2", "opus":
+	case "", "1", "opus":
 		claudeModel = "opus"
+	case "2", "sonnet":
+		claudeModel = "sonnet"
 	case "3", "haiku":
 		claudeModel = "haiku"
 	default:

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.6] - 2026-02-13
+
+### Changed
+- **Default rclaude model changed from sonnet to opus** — Updated `DefaultModel()` in claude tool, settings fallback default, setup wizard ordering/recommendations, and README documentation to use opus as the default model.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.5] - 2026-02-08
 
 ### Changed

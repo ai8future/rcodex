@@ -78,7 +78,7 @@ func (t *Tool) ValidModels() []string {
 
 // DefaultModel returns the default model name
 func (t *Tool) DefaultModel() string {
-	return "sonnet"
+	return "opus"
 }
 
 // DefaultModelSetting returns the default model from settings

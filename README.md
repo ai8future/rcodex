@@ -270,7 +270,7 @@ Bundles are JSON workflow definitions stored in `~/.rcodegen/bundles/` or built-
 | **Cost Tracking** | iTerm2 API | iTerm2 API | Not yet |
 | **Report Prefix** | `claude-` | `codex-` | `gemini-` |
 | **Budget Control** | `--max-budget-usd` | None | None |
-| **Default Model** | sonnet | gpt-5.3-codex | gemini-3 |
+| **Default Model** | opus | gpt-5.3-codex | gemini-3 |
 
 ## Report Management
 
