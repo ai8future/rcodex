@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -190,11 +191,24 @@ func SaveGrades(reportDir string, grades *GradesFile) error {
 }
 
 // AppendGrade adds a new grade entry to .grades.json, avoiding duplicates
-// Thread-safe with file locking
+// Thread-safe with both in-process mutex and cross-process file locking
 func AppendGrade(reportDir, reportFile, tool, task string, grade float64, date time.Time) error {
-	// Lock to prevent race conditions
+	// In-process lock to prevent race conditions between goroutines
 	gradesFileMutex.Lock()
 	defer gradesFileMutex.Unlock()
+
+	// Cross-process file lock to prevent concurrent process corruption
+	lockPath := filepath.Join(reportDir, ".grades.json.lock")
+	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open grades lock file: %w", err)
+	}
+	defer lockFile.Close()
+
+	if err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX); err != nil {
+		return fmt.Errorf("failed to acquire grades file lock: %w", err)
+	}
+	defer syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
 
 	grades, err := LoadGrades(reportDir)
 	if err != nil {

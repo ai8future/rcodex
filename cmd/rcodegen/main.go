@@ -93,7 +93,11 @@ func runBundle() {
 	}
 
 	// Load settings
-	s, _ := settings.LoadWithFallback()
+	s, _, err := settings.LoadWithFallback()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Load bundle
 	b, err := bundle.Load(bundleName)
@@ -117,7 +121,9 @@ func runBundle() {
 	env, err := orch.Run(b, inputs)
 
 	if *jsonOutput {
-		json.NewEncoder(os.Stdout).Encode(env)
+		if err := json.NewEncoder(os.Stdout).Encode(env); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to encode JSON output: %v\n", err)
+		}
 	}
 
 	if err != nil || env.Status != "success" {

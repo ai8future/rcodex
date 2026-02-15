@@ -97,7 +97,11 @@ func (r *Runner) RunAndExit() {
 func (r *Runner) Run() *RunResult {
 	// Load settings from settings.json (or run interactive setup)
 	var ok bool
-	r.Settings, ok = settings.LoadOrSetup()
+	var settingsErr error
+	r.Settings, ok, settingsErr = settings.LoadOrSetup()
+	if settingsErr != nil {
+		return runError(1, settingsErr)
+	}
 	if !ok {
 		return runError(1, fmt.Errorf("setup cancelled or failed"))
 	}
@@ -488,6 +492,7 @@ func (r *Runner) executeWithStreamParser(cfg *Config, cmd *exec.Cmd) int {
 		fmt.Fprintf(os.Stderr, "%sError:%s Could not create stdout pipe: %v\n", Yellow, Reset, err)
 		return 1
 	}
+	defer stdout.Close()
 
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

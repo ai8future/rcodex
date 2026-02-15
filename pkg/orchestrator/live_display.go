@@ -142,12 +142,27 @@ func (d *LiveDisplay) animationLoop() {
 		case <-d.done:
 			return
 		case <-ticker.C:
+			// Extract step info under lock, then do file I/O outside lock
+			d.mu.Lock()
+			stepName := ""
+			logDir := ""
+			if d.currentStep >= 0 && d.currentStep < len(d.steps) && d.logDir != "" {
+				stepName = d.steps[d.currentStep].Name
+				logDir = d.logDir
+			}
+			d.mu.Unlock()
+
+			// Read log file outside the lock to avoid blocking other operations
+			var lastLine string
+			if stepName != "" && logDir != "" {
+				lastLine = readLastMeaningfulLine(logDir, stepName)
+			}
+
+			// Re-acquire lock to update state and render
 			d.mu.Lock()
 			d.spinnerFrame = (d.spinnerFrame + 1) % len(spinnerFrames)
-			// Read latest line from current step's log
-			if d.currentStep >= 0 && d.currentStep < len(d.steps) && d.logDir != "" {
-				stepName := d.steps[d.currentStep].Name
-				d.liveOutput = d.readLastMeaningfulLine(stepName)
+			if lastLine != "" {
+				d.liveOutput = lastLine
 			}
 			d.render()
 			d.mu.Unlock()
@@ -156,8 +171,8 @@ func (d *LiveDisplay) animationLoop() {
 }
 
 // readLastMeaningfulLine reads the last non-empty, meaningful line from a step's log
-func (d *LiveDisplay) readLastMeaningfulLine(stepName string) string {
-	logPath := filepath.Join(d.logDir, stepName+".log")
+func readLastMeaningfulLine(logDir, stepName string) string {
+	logPath := filepath.Join(logDir, stepName+".log")
 	f, err := os.Open(logPath)
 	if err != nil {
 		return ""

@@ -53,7 +53,7 @@ func (w *Workspace) OutputPath(stepName string) string {
 
 func (w *Workspace) WriteOutput(stepName string, data interface{}) (string, error) {
 	path := w.OutputPath(stepName)
-	f, err := os.Create(path)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return "", err
 	}

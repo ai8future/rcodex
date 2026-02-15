@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,19 +14,26 @@ import (
 
 type Context struct {
 	mu           sync.RWMutex
+	ctx          context.Context // Signal-aware context for cancellation propagation
 	Inputs       map[string]string
 	StepResults  map[string]*envelope.Envelope
 	Variables    map[string]string
 	ToolSessions map[string]string // Tool name -> session ID for reuse
 }
 
-func NewContext(inputs map[string]string) *Context {
+func NewContext(parentCtx context.Context, inputs map[string]string) *Context {
 	return &Context{
+		ctx:          parentCtx,
 		Inputs:       inputs,
 		StepResults:  make(map[string]*envelope.Envelope),
 		Variables:    make(map[string]string),
 		ToolSessions: make(map[string]string),
 	}
+}
+
+// Ctx returns the context.Context for cancellation propagation
+func (c *Context) Ctx() context.Context {
+	return c.ctx
 }
 
 // GetToolSession returns the session ID for a tool, if any
@@ -45,10 +53,6 @@ func (c *Context) SetToolSession(toolName, sessionID string) {
 var varPattern = regexp.MustCompile(`\$\{([^}]+)\}`)
 
 func (c *Context) Resolve(s string) string {
-	// We do a read lock around the whole resolution to ensure consistency
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	return varPattern.ReplaceAllStringFunc(s, func(match string) string {
 		ref := match[2 : len(match)-1] // Strip ${ and }
 		parts := strings.Split(ref, ".")
@@ -56,30 +60,33 @@ func (c *Context) Resolve(s string) string {
 		switch parts[0] {
 		case "inputs":
 			if len(parts) >= 2 {
-				if v, ok := c.Inputs[parts[1]]; ok {
+				c.mu.RLock()
+				v, ok := c.Inputs[parts[1]]
+				c.mu.RUnlock()
+				if ok {
 					return v
 				}
 			}
 		case "steps":
 			if len(parts) >= 3 {
 				stepName := parts[1]
-				if env, ok := c.StepResults[stepName]; ok {
+				c.mu.RLock()
+				env, ok := c.StepResults[stepName]
+				c.mu.RUnlock()
+				if ok {
 					switch parts[2] {
 					case "output_ref":
 						return env.OutputRef
 					case "status":
 						return string(env.Status)
 					case "stdout", "stderr":
-						// Read from output file
+						// Read from output file — done outside lock
 						if env.OutputRef != "" {
-							// NOTE: Reading file IO inside the lock.
-							// For high throughput this might be a bottleneck, but for correctness it's safe.
 							if data, err := os.ReadFile(env.OutputRef); err == nil {
 								var output map[string]interface{}
 								if err := json.Unmarshal(data, &output); err == nil {
 									if v, ok := output[parts[2]]; ok {
 										content := fmt.Sprintf("%v", v)
-										// For Claude/Codex streaming JSON output, extract the result
 										return extractStreamingResult(content)
 									}
 								}

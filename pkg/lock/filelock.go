@@ -3,6 +3,7 @@
 package lock
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -139,10 +140,7 @@ func (l *FileLock) Release() error {
 
 	unlockErr := syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
 	closeErr := l.file.Close()
-	if unlockErr != nil {
-		return fmt.Errorf("failed to unlock: %w", unlockErr)
-	}
-	return closeErr
+	return errors.Join(unlockErr, closeErr)
 }
 
 // GetIdentifier returns a reasonable identifier for the current process

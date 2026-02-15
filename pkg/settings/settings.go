@@ -208,11 +208,11 @@ func GetDefaultSettings() *Settings {
 }
 
 // LoadWithFallback tries to load settings, falling back to defaults if not found
-// Returns the settings (possibly with defaults) and whether the config file existed
-func LoadWithFallback() (*Settings, bool) {
+// Returns the settings (possibly with defaults), whether the config file existed, and any validation error
+func LoadWithFallback() (*Settings, bool, error) {
 	settings, err := Load()
 	if err != nil {
-		return GetDefaultSettings(), false
+		return GetDefaultSettings(), false, nil
 	}
 	// Fill in any missing defaults
 	if settings.Defaults.Codex.Model == "" {
@@ -238,8 +238,7 @@ func LoadWithFallback() (*Settings, bool) {
 
 	// Check for reserved task name overrides before merging
 	if err := ValidateNoReservedTaskOverrides(settings.Tasks); err != nil {
-		fmt.Fprintf(os.Stderr, "%sError:%s %v\n", yellow, reset, err)
-		os.Exit(1)
+		return nil, false, err
 	}
 	// Merge default tasks - custom user tasks with non-reserved names are allowed
 	if settings.Tasks == nil {
@@ -248,7 +247,7 @@ func LoadWithFallback() (*Settings, bool) {
 	for name, task := range GetDefaultTasks() {
 		settings.Tasks[name] = task // Always use built-in defaults for reserved names
 	}
-	return settings, true
+	return settings, true, nil
 }
 
 // ToTaskConfig converts Settings to the legacy TaskConfig format
@@ -647,8 +646,8 @@ func RunInteractiveSetup() (*Settings, bool) {
 }
 
 // LoadOrSetup tries to load settings, or runs interactive setup if not found
-// Returns the settings and whether setup was successful
-func LoadOrSetup() (*Settings, bool) {
+// Returns the settings, whether setup was successful, and any validation error
+func LoadOrSetup() (*Settings, bool, error) {
 	settings, err := Load()
 	if err == nil {
 		// Apply environment variable overrides (RCODEGEN_* vars override settings.json)
@@ -656,8 +655,7 @@ func LoadOrSetup() (*Settings, bool) {
 
 		// Check for reserved task name overrides before merging
 		if err := ValidateNoReservedTaskOverrides(settings.Tasks); err != nil {
-			fmt.Fprintf(os.Stderr, "%sError:%s %v\n", yellow, reset, err)
-			os.Exit(1)
+			return nil, false, err
 		}
 		// Merge default tasks - custom user tasks with non-reserved names are allowed
 		if settings.Tasks == nil {
@@ -666,9 +664,10 @@ func LoadOrSetup() (*Settings, bool) {
 		for name, task := range GetDefaultTasks() {
 			settings.Tasks[name] = task // Always use built-in defaults for reserved names
 		}
-		return settings, true
+		return settings, true, nil
 	}
 
 	// Settings not found - run interactive setup
-	return RunInteractiveSetup()
+	s, ok := RunInteractiveSetup()
+	return s, ok, nil
 }

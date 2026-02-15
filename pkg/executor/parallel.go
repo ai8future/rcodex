@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"context"
 	"sync"
 
 	"rcodegen/pkg/bundle"
@@ -14,6 +15,15 @@ type ParallelExecutor struct {
 }
 
 func (e *ParallelExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context, ws *workspace.Workspace) (*envelope.Envelope, error) {
+	// Check for cancellation before starting parallel work
+	if ctx.Ctx().Err() != nil {
+		return envelope.New().Failure("CANCELLED", "execution cancelled").Build(), ctx.Ctx().Err()
+	}
+
+	// Derive a cancellable context so we can cancel remaining goroutines on first error
+	parallelCtx, cancel := context.WithCancel(ctx.Ctx())
+	defer cancel()
+
 	var wg sync.WaitGroup
 	results := make(map[string]*envelope.Envelope)
 	var mu sync.Mutex
@@ -23,11 +33,19 @@ func (e *ParallelExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context,
 		wg.Add(1)
 		go func(s bundle.Step) {
 			defer wg.Done()
+			// Check for cancellation before executing
+			if parallelCtx.Err() != nil {
+				mu.Lock()
+				results[s.Name] = envelope.New().Failure("CANCELLED", "parallel execution cancelled").Build()
+				mu.Unlock()
+				return
+			}
 			env, err := e.Dispatcher.Execute(&s, ctx, ws)
 			mu.Lock()
 			defer mu.Unlock()
 			if err != nil && firstErr == nil {
 				firstErr = err
+				cancel() // Cancel remaining parallel steps
 			}
 			results[s.Name] = env
 			ctx.SetResult(s.Name, env) // Make available to later steps

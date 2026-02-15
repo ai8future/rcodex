@@ -93,6 +93,9 @@ func New(s *settings.Settings) *Orchestrator {
 	if DispatcherFactory != nil {
 		dispatcher = DispatcherFactory(tools)
 	}
+	if dispatcher == nil {
+		fmt.Fprintf(os.Stderr, "Warning: no step dispatcher registered — bundle execution will fail\n")
+	}
 
 	return &Orchestrator{
 		settings:   s,
@@ -194,14 +197,20 @@ func (o *Orchestrator) Run(b *bundle.Bundle, inputs map[string]string) (*envelop
 	display.Start()
 	defer display.Stop()
 
-	// Create context
-	ctx := NewContext(inputs)
+	// Create context with signal-aware parent for cancellation propagation
+	ctx := NewContext(sigCtx, inputs)
 
 	// Track costs
 	var totalCost float64
 	var totalInputTokens, totalOutputTokens int
 	var totalCacheRead, totalCacheWrite int
 	var stepStats []StepStats
+
+	// Ensure dispatcher is available
+	if o.dispatcher == nil {
+		return envelope.New().Failure("CONFIG_ERROR", "no step dispatcher registered — ensure executor package is imported").Build(),
+			fmt.Errorf("no step dispatcher registered")
+	}
 
 	// Execute steps
 	for i, step := range b.Steps {
@@ -1144,7 +1153,7 @@ func scanOutputFiles(dir string) ([]FileInfo, OutputStats) {
 	var files []FileInfo
 	var stats OutputStats
 
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
 		}
@@ -1177,7 +1186,9 @@ func scanOutputFiles(dir string) ([]FileInfo, OutputStats) {
 
 		files = append(files, fi)
 		return nil
-	})
+	}); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: error walking output directory %s: %v\n", dir, err)
+	}
 
 	return files, stats
 }

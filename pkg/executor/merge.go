@@ -29,6 +29,13 @@ func (e *MergeExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context, ws
 		contents = append(contents, string(data))
 	}
 
+	// Fail if no inputs were successfully read
+	if len(contents) == 0 {
+		return envelope.New().
+			Failure("MERGE_NO_INPUTS", fmt.Sprintf("all %d inputs failed to read: %v", len(step.Merge.Inputs), failedInputs)).
+			Build(), fmt.Errorf("merge step %s: all inputs failed to read", step.Name)
+	}
+
 	var merged string
 	switch step.Merge.Strategy {
 	case "concat":

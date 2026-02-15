@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.7] - 2026-02-15
+
+### Fixed
+- **Lock Release error handling** — `Release()` now uses `errors.Join()` to return both unlock and close errors instead of losing the close error.
+- **Workspace file permissions** — Output files now created with 0600 permissions instead of default 0666.
+- **extractStepName empty string bug** — Fixed `extractStepName` returning empty string when ref has no further dot after `${steps.`.
+- **Vote zero-handling** — `VoteExecutor` now returns an error when no valid votes are collected instead of silently returning an empty result.
+- **JSON encoding error check** — `cmd/rcodegen` now checks and logs errors from JSON encoding to stdout.
+- **Negative credit logging** — Claude tool now logs a warning when negative session/weekly costs are detected (credit reset during run).
+- **Codex stale status reset** — Fixed `PrintStatusSummary` using `statusBefore` instead of `statusAfter` for reset time display.
+- **filepath.Walk error ignored** — `scanOutputFiles` now checks and logs errors from `filepath.Walk`.
+- **Settings os.Exit removed** — `LoadWithFallback()` and `LoadOrSetup()` now return errors instead of calling `os.Exit(1)` in library code. Callers handle exit.
+- **Settings error handling** — `LoadWithFallback()` signature changed to `(*Settings, bool, error)` for proper error reporting.
+- **Codex model/effort validation** — `ValidateConfig()` now validates model is non-empty and effort is one of: low, medium, high, xhigh.
+- **findWrapper fallback** — Returns an error when wrapper script is not found instead of falling back to bare filename via PATH.
+- **Context.Resolve file I/O outside lock** — File reads in `Resolve()` now happen outside the RLock to avoid blocking on slow I/O.
+- **Grades cross-process file locking** — `AppendGrade()` now uses `syscall.Flock` for cross-process file locking in addition to in-process mutex.
+- **StdoutPipe close** — Added `defer stdout.Close()` after pipe creation in `executeWithStreamParser`.
+- **LiveDisplay file I/O outside lock** — Log file reads in `animationLoop` now happen outside the mutex lock.
+- **Context propagation** — Added `context.Context` field to orchestrator `Context` struct, threaded signal context from orchestrator for cancellation propagation.
+- **Parallel goroutine cancellation** — Parallel executor now checks for cancellation before starting and cancels remaining goroutines on first error.
+- **Nil dispatcher check** — Added nil check after dispatcher creation with descriptive error to prevent nil pointer dereference.
+- **Merge zero-input failure** — Merge executor now returns an error when all inputs fail to read instead of returning success with empty content.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.6] - 2026-02-13
 
 ### Changed

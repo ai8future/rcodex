@@ -70,7 +70,12 @@ func (t *Tool) BuildCommand(cfg *runner.Config, workDir, task string) *exec.Cmd 
 	// Use resume with PTY wrapper if we have a session ID
 	if cfg.SessionID != "" {
 		// Use the Python PTY wrapper for resume (handles terminal emulation)
-		wrapperPath := t.findWrapper()
+		wrapperPath, err := t.findWrapper()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			// Return a command that will fail immediately
+			return exec.Command("false")
+		}
 		args := []string{
 			wrapperPath,
 			cfg.SessionID,
@@ -107,7 +112,7 @@ func (t *Tool) BuildCommand(cfg *runner.Config, workDir, task string) *exec.Cmd 
 	return exec.Command("codex", args...)
 }
 
-func (t *Tool) findWrapper() string {
+func (t *Tool) findWrapper() (string, error) {
 	const wrapperName = "codex_pty_wrapper.py"
 
 	// 1. Check same directory as executable
@@ -115,7 +120,7 @@ func (t *Tool) findWrapper() string {
 	if err == nil {
 		path := filepath.Join(filepath.Dir(exe), wrapperName)
 		if _, err := os.Stat(path); err == nil {
-			return path
+			return path, nil
 		}
 	}
 
@@ -123,7 +128,7 @@ func (t *Tool) findWrapper() string {
 	if cwd, err := os.Getwd(); err == nil {
 		path := filepath.Join(cwd, wrapperName)
 		if _, err := os.Stat(path); err == nil {
-			return path
+			return path, nil
 		}
 	}
 
@@ -131,11 +136,10 @@ func (t *Tool) findWrapper() string {
 	home := os.Getenv("HOME")
 	path := filepath.Join(home, ".rcodegen", wrapperName)
 	if _, err := os.Stat(path); err == nil {
-		return path
+		return path, nil
 	}
 
-	// Fallback (mostly for dev environment if CWD check failed)
-	return wrapperName
+	return "", fmt.Errorf("codex PTY wrapper script %s not found (searched executable dir, CWD, and ~/.rcodegen/)", wrapperName)
 }
 
 // ShowStatus displays Codex credit status
@@ -179,11 +183,11 @@ func (t *Tool) PrintStatusSummary(before, after interface{}) {
 	if hasBefore && hasAfter {
 		resets5h := ""
 		resetsWeekly := ""
-		if statusBefore.FiveHourResets != nil {
-			resets5h = fmt.Sprintf(" %sresets %s%s", runner.Dim, *statusBefore.FiveHourResets, runner.Reset)
+		if statusAfter.FiveHourResets != nil {
+			resets5h = fmt.Sprintf(" %sresets %s%s", runner.Dim, *statusAfter.FiveHourResets, runner.Reset)
 		}
-		if statusBefore.WeeklyResets != nil {
-			resetsWeekly = fmt.Sprintf(" %sresets %s%s", runner.Dim, *statusBefore.WeeklyResets, runner.Reset)
+		if statusAfter.WeeklyResets != nil {
+			resetsWeekly = fmt.Sprintf(" %sresets %s%s", runner.Dim, *statusAfter.WeeklyResets, runner.Reset)
 		}
 
 		// Calculate usage if we have the values
@@ -259,7 +263,17 @@ func (t *Tool) PrepareForExecution(cfg *runner.Config) {
 
 // ValidateConfig validates Codex-specific configuration
 func (t *Tool) ValidateConfig(cfg *runner.Config) error {
-	// Codex accepts any model name, so no validation needed
+	// Validate model is non-empty
+	if cfg.Model == "" {
+		return fmt.Errorf("model must be specified")
+	}
+
+	// Validate effort level
+	validEfforts := map[string]bool{"low": true, "medium": true, "high": true, "xhigh": true}
+	if cfg.Effort != "" && !validEfforts[cfg.Effort] {
+		return fmt.Errorf("invalid effort '%s': must be one of low, medium, high, xhigh", cfg.Effort)
+	}
+
 	return nil
 }
 

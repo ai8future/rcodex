@@ -3,6 +3,7 @@ package claude
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -190,7 +191,8 @@ func (t *Tool) PrintStatusSummary(before, after interface{}) {
 		if statusBefore.SessionLeft != nil && statusAfter.SessionLeft != nil {
 			sessionCost = *statusBefore.SessionLeft - *statusAfter.SessionLeft
 			if sessionCost < 0 {
-				sessionCost = 0 // Reset happened during run
+				fmt.Fprintf(os.Stderr, "Warning: negative session cost detected (%d%%), likely due to credit reset during run\n", sessionCost)
+				sessionCost = 0
 			}
 		}
 		resetsSession := ""
@@ -214,7 +216,8 @@ func (t *Tool) PrintStatusSummary(before, after interface{}) {
 		if weeklyBefore != nil && weeklyAfter != nil {
 			weeklyCost = *weeklyBefore - *weeklyAfter
 			if weeklyCost < 0 {
-				weeklyCost = 0 // Reset happened during run
+				fmt.Fprintf(os.Stderr, "Warning: negative weekly cost detected (%d%%), likely due to credit reset during run\n", weeklyCost)
+				weeklyCost = 0
 			}
 		}
 		resetsWeekly := ""

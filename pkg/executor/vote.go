@@ -1,6 +1,8 @@
 package executor
 
 import (
+	"fmt"
+
 	"rcodegen/pkg/bundle"
 	"rcodegen/pkg/envelope"
 	"rcodegen/pkg/orchestrator"
@@ -27,6 +29,9 @@ func (e *VoteExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context, ws 
 	}
 
 	total := votes["success"] + votes["failure"]
+	if total == 0 {
+		return nil, fmt.Errorf("vote step %s: no valid votes collected", step.Name)
+	}
 
 	var decision string
 	switch step.Vote.Strategy {
@@ -62,11 +67,16 @@ func (e *VoteExecutor) Execute(step *bundle.Step, ctx *orchestrator.Context, ws 
 func extractStepName(ref string) string {
 	// ${steps.name.output_ref} -> name
 	if len(ref) > 9 && ref[:8] == "${steps." {
-		end := 8
 		for i := 8; i < len(ref); i++ {
 			if ref[i] == '.' {
 				return ref[8:i]
 			}
+		}
+		// No further dot found — return everything after "${steps."
+		// Strip trailing "}" if present
+		end := len(ref)
+		if ref[end-1] == '}' {
+			end--
 		}
 		return ref[8:end]
 	}
