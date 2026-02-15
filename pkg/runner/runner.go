@@ -1238,7 +1238,8 @@ func (r *Runner) printUsage() {
 	toolName := r.Tool.Name()
 
 	// Header
-	fmt.Printf("%s%sUsage:%s %s %s[OPTIONS]%s %s\"<task>\"%s\n\n", Bold, Cyan, Reset, toolName, Dim, Reset, Yellow, Reset)
+	fmt.Printf("%s%sUsage:%s %s %s[OPTIONS]%s %s\"<task>\"%s\n", Bold, Cyan, Reset, toolName, Dim, Reset, Yellow, Reset)
+	fmt.Printf("%sVersion: %s%s\n\n", Dim, GetVersion(), Reset)
 	fmt.Printf("Run %s in unattended mode with a one-shot task.\n\n", r.Tool.BannerSubtitle())
 
 	// Directory Options

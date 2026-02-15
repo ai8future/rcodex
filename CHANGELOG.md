@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.9] - 2026-02-15
+
+### Added
+- **Version in help output** — `--help` now displays the version number in the header.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.8] - 2026-02-15
 
 ### Added
