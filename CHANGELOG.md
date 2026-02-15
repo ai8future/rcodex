@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.10] - 2026-02-15
+
+### Changed
+- **Swapped `-v` / `-V` flags** — `-v` now shows version (was verbose), `-V` now enables verbose/debug logging (was version). Long forms `--version` and `--verbose` unchanged.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.9] - 2026-02-15
 
 ### Added

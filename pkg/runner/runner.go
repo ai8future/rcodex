@@ -871,9 +871,9 @@ func (r *Runner) parseArgs() (*Config, error) {
 	flag.BoolVar(&showTasks, "tasks", false, "List available task shortcuts")
 	flag.BoolVar(&showHelp, "h", false, "Show help message")
 	flag.BoolVar(&showHelp, "help", false, "Show help message")
-	flag.BoolVar(&showVersion, "V", false, "Show version")
+	flag.BoolVar(&showVersion, "v", false, "Show version")
 	flag.BoolVar(&showVersion, "version", false, "Show version")
-	flag.BoolVar(&cfg.Verbose, "v", false, "Enable verbose/debug logging")
+	flag.BoolVar(&cfg.Verbose, "V", false, "Enable verbose/debug logging")
 	flag.BoolVar(&cfg.Verbose, "verbose", false, "Enable verbose/debug logging")
 	flag.BoolVar(&migrateGrades, "migrate-grades", false, "Migrate existing reports to .grades.json")
 	flag.BoolVar(&migrateGradesAll, "migrate-grades-all", false, "Migrate grades for all repos in code directory")
@@ -1287,8 +1287,8 @@ func (r *Runner) printUsage() {
 	fmt.Printf("%s%sOther Options:%s\n", Bold, Cyan, Reset)
 	fmt.Printf("  %s--status-only%s         Show status and exit\n", Green, Reset)
 	fmt.Printf("  %s-t%s, %s--tasks%s           List available task shortcuts\n", Green, Reset, Green, Reset)
-	fmt.Printf("  %s-v%s, %s--verbose%s         Enable debug logging to stderr\n", Green, Reset, Green, Reset)
-	fmt.Printf("  %s-V%s, %s--version%s         Show version\n", Green, Reset, Green, Reset)
+	fmt.Printf("  %s-V%s, %s--verbose%s         Enable debug logging to stderr\n", Green, Reset, Green, Reset)
+	fmt.Printf("  %s-v%s, %s--version%s         Show version\n", Green, Reset, Green, Reset)
 	fmt.Printf("  %s-h%s, %s--help%s            Show this help message\n\n", Green, Reset, Green, Reset)
 
 	// Configuration
