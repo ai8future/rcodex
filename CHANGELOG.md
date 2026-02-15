@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.8] - 2026-02-15
+
+### Added
+- **`--dir-all` / `-A` flag** — Run all git repos in a directory. Supports comma-separated paths. Discovers repos one level deep by checking for `.git`. Mutually exclusive with `--list`, `--recursive`, and `-d`/`-c`.
+- **`--list` _suite fallback scanning** — When a repo name is not found directly in the base directory, `--list` now scans `*_suite/` subdirectories as a fallback. Top-level matches take priority. Error messages indicate that `_suite` subdirectories were also checked.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.7] - 2026-02-15
 
 ### Fixed

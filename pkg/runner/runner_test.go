@@ -2,6 +2,9 @@ package runner
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
 	"testing"
 )
 
@@ -64,5 +67,72 @@ func TestRunError_DifferentCodes(t *testing.T) {
 			t.Errorf("runError(%d, %q): expected error message %q, got %q",
 				tc.code, tc.msg, tc.msg, result.Error.Error())
 		}
+	}
+}
+
+func TestFindSuiteDirs(t *testing.T) {
+	base := t.TempDir()
+	os.MkdirAll(filepath.Join(base, "serp_suite", "serp_svc", ".git"), 0755)
+	os.MkdirAll(filepath.Join(base, "ai_suite", "infra_ai8", ".git"), 0755)
+	os.MkdirAll(filepath.Join(base, "regular_dir"), 0755)
+	os.MkdirAll(filepath.Join(base, "solstice", ".git"), 0755)
+
+	dirs := findSuiteDirs(base, nil)
+	if len(dirs) != 2 {
+		t.Fatalf("expected 2 suite dirs, got %d: %v", len(dirs), dirs)
+	}
+
+	// Verify caching works
+	var cached []string
+	_ = findSuiteDirs(base, &cached)
+	if cached == nil {
+		t.Fatal("expected cache to be populated")
+	}
+	dirs2 := findSuiteDirs(base, &cached)
+	if len(dirs2) != 2 {
+		t.Fatalf("cached call: expected 2 suite dirs, got %d", len(dirs2))
+	}
+}
+
+func TestFindSuiteDirs_Empty(t *testing.T) {
+	base := t.TempDir()
+	dirs := findSuiteDirs(base, nil)
+	if len(dirs) != 0 {
+		t.Fatalf("expected 0 suite dirs, got %d", len(dirs))
+	}
+}
+
+func TestFindSuiteDirs_CachesEmptyResult(t *testing.T) {
+	base := t.TempDir()
+	var cached []string
+	_ = findSuiteDirs(base, &cached)
+	// After first call with no results, cache should be non-nil empty slice
+	if cached == nil {
+		t.Fatal("expected cache to be populated even with empty result")
+	}
+	if len(cached) != 0 {
+		t.Fatalf("expected 0 cached dirs, got %d", len(cached))
+	}
+}
+
+func TestDiscoverDirectories_SingleLevel(t *testing.T) {
+	base := t.TempDir()
+	os.MkdirAll(filepath.Join(base, "repo1", ".git"), 0755)
+	os.MkdirAll(filepath.Join(base, "repo2", ".git"), 0755)
+	os.MkdirAll(filepath.Join(base, "not_a_repo"), 0755)
+
+	dirs, err := discoverDirectories(base, 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	sort.Strings(dirs)
+	if len(dirs) != 2 {
+		t.Fatalf("expected 2 repos, got %d: %v", len(dirs), dirs)
+	}
+	if filepath.Base(dirs[0]) != "repo1" {
+		t.Errorf("expected repo1, got %s", filepath.Base(dirs[0]))
+	}
+	if filepath.Base(dirs[1]) != "repo2" {
+		t.Errorf("expected repo2, got %s", filepath.Base(dirs[1]))
 	}
 }

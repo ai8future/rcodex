@@ -50,6 +50,7 @@ type Config struct {
 	Recursive     bool   // Enable recursive directory scanning (-r)
 	RecurseLevels int    // Depth of scan (--levels, default 1)
 	DirList       string // Comma-separated subdirectory names (--list)
+	DirAll        string // Comma-separated directories: run all git repos within (--dir-all)
 
 	// Tool-specific fields (only some tools use these)
 	MaxBudget   string // Claude: max budget in USD

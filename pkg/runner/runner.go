@@ -636,6 +636,31 @@ func (r *Runner) printDetailedSummary(cfg *Config, workDir string, startTime tim
 	fmt.Printf("%s%s══════════════════════════════════════════%s\n", Bold, Cyan, Reset)
 }
 
+// findSuiteDirs returns all *_suite subdirectory paths under baseDir.
+// Results are cached: pass a non-nil pointer to reuse across calls.
+func findSuiteDirs(baseDir string, cached *[]string) []string {
+	if cached != nil && *cached != nil {
+		return *cached
+	}
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return nil
+	}
+	var suiteDirs []string
+	for _, entry := range entries {
+		if entry.IsDir() && strings.HasSuffix(entry.Name(), "_suite") {
+			suiteDirs = append(suiteDirs, filepath.Join(baseDir, entry.Name()))
+		}
+	}
+	if cached != nil {
+		if suiteDirs == nil {
+			suiteDirs = []string{}
+		}
+		*cached = suiteDirs
+	}
+	return suiteDirs
+}
+
 // discoverDirectories finds git repositories up to maxLevels depth.
 // Only includes directories containing a .git subdirectory.
 // Skips hidden directories and common non-project dirs.
@@ -856,6 +881,8 @@ func (r *Runner) parseArgs() (*Config, error) {
 	flag.BoolVar(&cfg.Recursive, "recursive", false, "Recursively scan subdirectories for git repos")
 	flag.IntVar(&cfg.RecurseLevels, "levels", 1, "Depth of recursive directory scan")
 	flag.StringVar(&cfg.DirList, "list", "", "Comma-separated subdirectory names to process")
+	flag.StringVar(&cfg.DirAll, "A", "", "Run all git repos in directory (comma-separated paths)")
+	flag.StringVar(&cfg.DirAll, "dir-all", "", "Run all git repos in directory (comma-separated paths)")
 
 	// Define tool-specific flags
 	r.defineToolSpecificFlags(cfg)
@@ -925,9 +952,15 @@ func (r *Runner) parseArgs() (*Config, error) {
 		return nil, err
 	}
 
-	// Check mutual exclusivity of --list and --recursive
+	// Check mutual exclusivity of directory scanning modes
 	if cfg.DirList != "" && cfg.Recursive {
 		return nil, fmt.Errorf("--list and --recursive cannot be used together")
+	}
+	if cfg.DirAll != "" && cfg.DirList != "" {
+		return nil, fmt.Errorf("--dir-all and --list cannot be used together")
+	}
+	if cfg.DirAll != "" && cfg.Recursive {
+		return nil, fmt.Errorf("--dir-all and --recursive cannot be used together")
 	}
 
 	// Handle --list: filter to specific subdirectories in specified order
@@ -949,6 +982,7 @@ func (r *Runner) parseArgs() (*Config, error) {
 
 		names := strings.Split(cfg.DirList, ",")
 		var filtered []string
+		var suiteDirs []string // lazily populated cache
 		for _, name := range names {
 			name = strings.TrimSpace(name)
 			if name == "" {
@@ -956,9 +990,22 @@ func (r *Runner) parseArgs() (*Config, error) {
 			}
 			dirPath := filepath.Join(baseDir, name)
 			if info, err := os.Stat(dirPath); err == nil && info.IsDir() {
+				// Found directly in base directory
 				filtered = append(filtered, dirPath)
 			} else {
-				return nil, fmt.Errorf("directory not found: %s", dirPath)
+				// Fallback: scan *_suite subdirectories
+				found := false
+				for _, suiteDir := range findSuiteDirs(baseDir, &suiteDirs) {
+					candidate := filepath.Join(suiteDir, name)
+					if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+						filtered = append(filtered, candidate)
+						found = true
+						break
+					}
+				}
+				if !found {
+					return nil, fmt.Errorf("directory not found: %s (also checked *_suite subdirectories)", dirPath)
+				}
 			}
 		}
 		if len(filtered) == 0 {
@@ -966,6 +1013,31 @@ func (r *Runner) parseArgs() (*Config, error) {
 		}
 		cfg.WorkDirs = filtered
 		cfg.Codebase = filepath.Base(filtered[0])
+	}
+
+	// Handle --dir-all: run all git repos in specified directories
+	if cfg.DirAll != "" {
+		if len(cfg.WorkDirs) > 0 {
+			return nil, fmt.Errorf("--dir-all cannot be used with -d or -c")
+		}
+		var allDirs []string
+		paths := strings.Split(cfg.DirAll, ",")
+		for _, p := range paths {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			found, err := discoverDirectories(p, 1)
+			if err != nil {
+				return nil, fmt.Errorf("--dir-all: %v", err)
+			}
+			allDirs = append(allDirs, found...)
+		}
+		if len(allDirs) == 0 {
+			return nil, fmt.Errorf("--dir-all: no git repositories found")
+		}
+		cfg.WorkDirs = allDirs
+		cfg.Codebase = filepath.Base(allDirs[0])
 	}
 
 	// Handle recursive directory scanning
@@ -1177,6 +1249,8 @@ func (r *Runner) printUsage() {
 	fmt.Printf("                        %s(comma-separated for multiple: -d /a,/b)%s\n", Dim, Reset)
 	fmt.Printf("  %s--list%s %s<names>%s       Subdirectory names to process in order\n", Green, Reset, Yellow, Reset)
 	fmt.Printf("                        %s(comma-separated: --list proj1,proj2)%s\n", Dim, Reset)
+	fmt.Printf("  %s-A%s, %s--dir-all%s %s<path>%s  Run all git repos in directory\n", Green, Reset, Green, Reset, Yellow, Reset)
+	fmt.Printf("                        %s(comma-separated for multiple: --dir-all /a,/b)%s\n", Dim, Reset)
 	fmt.Printf("  %s-o%s, %s--output%s %s<path>%s   Output directory for reports %s(replaces _rcodegen)%s\n", Green, Reset, Green, Reset, Yellow, Reset, Dim, Reset)
 	fmt.Printf("  %s-r%s, %s--recursive%s       Scan for git repos and run in each\n", Green, Reset, Green, Reset)
 	fmt.Printf("  %s--levels%s %s<N>%s         Depth of recursive scan %s(default: 1)%s\n\n", Green, Reset, Yellow, Reset, Dim, Reset)
