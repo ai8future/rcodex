@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-02-15
+
+### Fixed
+- **Makefile now embeds version via ldflags** — All binaries built with `make` have the version baked in so `-v` works from any directory. Previously builds used bare `go build` causing "unknown" version.
+
+### Added
+- **Build instructions in AGENTS.md** — Documents how to compile with `make` and why ldflags are required.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.0.10] - 2026-02-15
 
 ### Changed

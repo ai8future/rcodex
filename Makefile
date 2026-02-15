@@ -1,21 +1,25 @@
-.PHONY: all rcodex rclaude rcodegen rgemini clean test
+VERSION := $(shell cat VERSION | tr -d '[:space:]')
+LDFLAGS := -X rcodegen/pkg/runner.Version=$(VERSION)
+BINDIR  := bin
 
-all: rcodex rclaude rcodegen rgemini
+.PHONY: all rclaude rcodex rgemini rcodegen clean test
 
-rcodex:
-	go build -o rcodex ./cmd/rcodex
+all: rclaude rcodex rgemini rcodegen
 
 rclaude:
-	go build -o rclaude ./cmd/rclaude
+	go build -ldflags "$(LDFLAGS)" -o $(BINDIR)/rclaude ./cmd/rclaude
 
-rcodegen:
-	go build -o rcodegen ./cmd/rcodegen
+rcodex:
+	go build -ldflags "$(LDFLAGS)" -o $(BINDIR)/rcodex ./cmd/rcodex
 
 rgemini:
-	go build -o rgemini ./cmd/rgemini
+	go build -ldflags "$(LDFLAGS)" -o $(BINDIR)/rgemini ./cmd/rgemini
+
+rcodegen:
+	go build -ldflags "$(LDFLAGS)" -o $(BINDIR)/rcodegen ./cmd/rcodegen
 
 clean:
-	rm -f rcodex rclaude rcodegen rgemini
+	rm -f $(BINDIR)/rclaude $(BINDIR)/rcodex $(BINDIR)/rgemini $(BINDIR)/rcodegen
 
 test:
 	go test ./pkg/...

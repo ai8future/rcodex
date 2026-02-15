@@ -9,3 +9,16 @@
 - When you fix a bug, write short details on that bug and store it in _bugs_fixed. Depending on the severity or complexity, decide if you think you should be very brief - or less brief. Give your bug file a good name but always prepend the date. For example: 2026-12-31-failed-to-check-values-bug.md is a perfect name. Always lowercase. Always include the date in the filename.
 
 - Always remember to compile all binaries after code changes.
+
+## Compiling
+
+Use `make` from the project root to build all binaries with the version baked in:
+
+```bash
+make          # builds all 4 binaries (rclaude, rcodex, rgemini, rcodegen) into bin/
+make rclaude  # build just one
+make clean    # remove all binaries
+make test     # run tests
+```
+
+This uses `-ldflags` to embed the VERSION file into the binary so that `-v` works from any directory. Do NOT use bare `go build` without ldflags — the version will show as "unknown" when run outside the project directory.
