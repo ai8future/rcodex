@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.2] - 2026-02-17
+
+### Changed
+- **Default task prompts now prohibit reading existing report files** — Added "You are NOT allowed to read existing files in this directory" to all built-in task prompts (audit, test, fix, refactor, quick, grade, study) to prevent AI agents from being influenced by prior reports.
+
+### Agent
+- Claude:Opus 4.6
+
+## [2.1.1] - 2026-02-17
+
+### Changed
+- **Complete README.md rewrite** — Comprehensive documentation covering all 4 binaries, full flag reference, all 9 built-in bundles, orchestration pipeline, grading system, configuration priority, supported models, live display features, tool comparison, project structure, and extension guide. Replaces outdated v1.8.1 README that was missing most v2.x features.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.1.0] - 2026-02-15
 
 ### Fixed
