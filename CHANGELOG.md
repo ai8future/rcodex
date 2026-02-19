@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.3] - 2026-02-19
+
+### Fixed
+- **rgemini now always passes `-m` flag to gemini CLI** — Previously the model flag was omitted when using the default (`gemini-3-pro-preview`), causing the gemini CLI to fall back to its own default (`gemini-3-flash-preview`), leading to unexpected rate-limit errors on the flash model.
+
+### Agent
+- Claude:Opus 4.6
+
 ## [2.1.2] - 2026-02-17
 
 ### Changed

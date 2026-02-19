@@ -83,8 +83,8 @@ func (t *Tool) BuildCommand(cfg *runner.Config, workDir, task string) *exec.Cmd 
 		}
 	}
 
-	// Only add model flag if different from default
-	if cfg.Model != "" && cfg.Model != t.DefaultModel() {
+	// Always pass model explicitly — the gemini CLI's own default may differ from ours
+	if cfg.Model != "" {
 		args = append(args, "-m", cfg.Model)
 	}
 
